@@ -18,8 +18,9 @@
 //! # Naming
 //!
 //! Modules follow the API groups of the [개발가이드]: [`disclosure`] is
-//! 공시정보 (`DS001`), [`periodic`] is 정기보고서 주요정보 (`DS002`) and
-//! [`financial`] is 정기보고서 재무정보 (`DS003`). Methods are the endpoint names in
+//! 공시정보 (`DS001`), [`periodic`] is 정기보고서 주요정보 (`DS002`),
+//! [`financial`] is 정기보고서 재무정보 (`DS003`) and [`ownership`] is
+//! 지분공시 종합정보 (`DS004`). Methods are the endpoint names in
 //! snake case, and request setters and response fields keep the OpenDART
 //! parameter names (`rcept_no`, `bgn_de`, `induty_code`), so the official
 //! guide can be read side by side with this crate.
@@ -69,6 +70,7 @@ pub mod financial;
 #[cfg(test)]
 mod guide_check;
 mod number;
+pub mod ownership;
 pub mod periodic;
 mod report;
 

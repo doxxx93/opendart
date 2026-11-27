@@ -100,6 +100,13 @@ async fn full_statements() {
 
 #[tokio::test]
 #[ignore = "calls the live OpenDART API"]
+async fn major_holdings() {
+    let rows = client().majorstock("00126380").await.unwrap();
+    assert!(rows.iter().any(|row| row.repror == "삼성물산"));
+}
+
+#[tokio::test]
+#[ignore = "calls the live OpenDART API"]
 async fn unregistered_key() {
     let client = Client::new("0".repeat(40));
     let err = client.company("00126380").await.unwrap_err();
