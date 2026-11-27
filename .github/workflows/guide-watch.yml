@@ -1,0 +1,62 @@
+# Detects changes to the OpenDART developer guide, FAQ, notices and API
+# change notices by regenerating spec/guide-snapshot.json.
+#
+# - schedule / manual run: opens an issue (or updates the open one) with the
+#   snapshot diff when it changed. A green run with no issue means no change.
+# - pull_request touching the script or snapshot: fails if the committed
+#   snapshot is out of date.
+name: Guide watch
+
+on:
+  schedule:
+    - cron: "17 0 * * *" # 09:17 KST
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - scripts/fetch_guide.py
+      - spec/guide-snapshot.json
+      - .github/workflows/guide-watch.yml
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: python3 -I scripts/fetch_guide.py --snapshot-only --snapshot spec/guide-snapshot.json
+      - name: Check the committed snapshot
+        if: github.event_name == 'pull_request'
+        run: git diff --exit-code -- spec/guide-snapshot.json
+      - name: Report changes in an issue
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if git diff --quiet -- spec/guide-snapshot.json; then
+            echo "No change in the guide snapshot."
+            exit 0
+          fi
+          title="OpenDART guide changed"
+          {
+            echo "The [guide watch run]($RUN_URL) found changes in \`spec/guide-snapshot.json\`."
+            echo
+            echo "Regenerate it with \`python3 -I scripts/fetch_guide.py guide --snapshot spec/guide-snapshot.json\`, read the changed pages in \`guide/\`, update the client if an endpoint changed, and commit the new snapshot in a pull request that closes this issue."
+            echo
+            echo '```diff'
+            git diff -- spec/guide-snapshot.json | head -c 50000
+            echo '```'
+          } > body.md
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue edit "$number" --body-file body.md
+          else
+            gh issue create --title "$title" --body-file body.md
+          fi
