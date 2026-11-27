@@ -17,10 +17,11 @@ struct Envelope {
 }
 
 impl Envelope {
-    fn into_result(self) -> Result<(), Error> {
+    fn into_result(self, endpoint: &'static str) -> Result<(), Error> {
         match Status::from_code(&self.status) {
             None => Ok(()),
             Some(status) => Err(Error::Api {
+                endpoint,
                 status,
                 message: self.message,
             }),
@@ -35,7 +36,7 @@ impl Envelope {
 pub(crate) fn json<T: DeserializeOwned>(endpoint: &'static str, body: &[u8]) -> Result<T, Error> {
     let envelope: Envelope =
         serde_json::from_slice(body).map_err(|err| Error::decode(endpoint, err))?;
-    envelope.into_result()?;
+    envelope.into_result(endpoint)?;
     serde_json::from_slice(body).map_err(|err| Error::decode(endpoint, err))
 }
 
@@ -57,7 +58,7 @@ fn xml_error(endpoint: &'static str, body: &[u8]) -> Error {
         .map_err(BoxError::from)
         .and_then(|text| quick_xml::de::from_str::<Envelope>(text).map_err(BoxError::from));
     match envelope {
-        Ok(envelope) => match envelope.into_result() {
+        Ok(envelope) => match envelope.into_result(endpoint) {
             Err(err) => err,
             Ok(()) => Error::decode(endpoint, "status 000 but the body is not a ZIP file"),
         },
@@ -141,7 +142,12 @@ mod tests {
         let body = include_bytes!("../tests/fixtures/error/unregistered_key.xml");
         let err = zip("corpCode.xml", &body[..]).unwrap_err();
         match err {
-            Error::Api { status, message } => {
+            Error::Api {
+                endpoint,
+                status,
+                message,
+            } => {
+                assert_eq!(endpoint, "corpCode.xml");
                 assert_eq!(status, Status::UnregisteredKey);
                 assert_eq!(message, "등록되지 않은 인증키입니다.");
             }

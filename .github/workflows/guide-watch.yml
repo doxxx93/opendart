@@ -2,7 +2,10 @@
 # change notices by regenerating spec/guide-snapshot.json.
 #
 # - schedule / manual run: opens an issue (or updates the open one) with the
-#   snapshot diff when it changed. A green run with no issue means no change.
+#   snapshot diff when it changed, and closes it once the committed snapshot
+#   matches again. A green run with no open issue means no change. Pages
+#   that do not look like the guide (maintenance, new markup) fail the run
+#   instead of producing a partial snapshot.
 # - pull_request touching the script or snapshot: fails if the committed
 #   snapshot is out of date.
 name: Guide watch
@@ -40,11 +43,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          title="OpenDART guide changed"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
           if git diff --quiet -- spec/guide-snapshot.json; then
             echo "No change in the guide snapshot."
+            # The committed snapshot caught up (or the change was reverted).
+            if [ -n "$number" ]; then
+              gh issue close "$number" --comment "The [guide watch run]($RUN_URL) matches the committed snapshot again."
+            fi
             exit 0
           fi
-          title="OpenDART guide changed"
           {
             echo "The [guide watch run]($RUN_URL) found changes in \`spec/guide-snapshot.json\`."
             echo
@@ -54,7 +62,6 @@ jobs:
             git diff -- spec/guide-snapshot.json | head -c 50000
             echo '```'
           } > body.md
-          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
           if [ -n "$number" ]; then
             gh issue edit "$number" --body-file body.md
           else

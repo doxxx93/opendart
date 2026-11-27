@@ -5,6 +5,7 @@ use std::io::BufReader;
 use jiff::civil::Date;
 use serde::Deserialize;
 
+use crate::client::Query;
 use crate::{Client, Error, decode};
 
 const ENDPOINT: &str = "corpCode.xml";
@@ -18,11 +19,11 @@ pub struct CorpCodeEntry {
     /// 정식명칭: the company name.
     pub corp_name: String,
     /// 영문 정식명칭: the English name, `None` when blank.
-    #[serde(deserialize_with = "decode::opt_string")]
+    #[serde(default, deserialize_with = "decode::opt_string")]
     pub corp_eng_name: Option<String>,
     /// 종목코드: the 6-character stock code, `None` for unlisted
     /// companies. Newer codes contain letters, e.g. `"0068Y0"`.
-    #[serde(deserialize_with = "decode::opt_string")]
+    #[serde(default, deserialize_with = "decode::opt_string")]
     pub stock_code: Option<String>,
     /// 최종변경일자: when the company overview last changed.
     #[serde(deserialize_with = "decode::date")]
@@ -43,7 +44,7 @@ impl Client {
     /// with about 120,000 companies, of which about 4,000 are listed, so
     /// cache the result rather than calling this per request.
     pub async fn corp_code(&self) -> Result<Vec<CorpCodeEntry>, Error> {
-        let body = self.get(ENDPOINT, &Vec::new()).await?;
+        let body = self.get(ENDPOINT, &Query::new()).await?;
         parse(&body)
     }
 }
@@ -68,6 +69,11 @@ fn parse(body: &[u8]) -> Result<Vec<CorpCodeEntry>, Error> {
 mod tests {
     use super::*;
     use jiff::civil::date;
+
+    #[test]
+    fn request_matches_the_guide() {
+        crate::guide_check::assert_documented(ENDPOINT, &Query::new());
+    }
 
     #[test]
     fn parses_the_trimmed_real_zip() {
