@@ -50,7 +50,7 @@ jobs:
             exit 1
           fi
 
-  # Real responses can change before the guide does. Nine requests a week
+  # Real responses can change before the guide does. Ten requests a week
   # against the key's daily quota, which quant's watcher shares.
   live:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '41 1 * * 1'
