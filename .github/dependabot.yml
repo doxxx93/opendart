@@ -4,7 +4,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Wait a week before adopting a new release, in case it was compromised.
+    cooldown:
+      default-days: 7
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    # Wait a week before adopting a new release, in case it was compromised.
+    cooldown:
+      default-days: 7
