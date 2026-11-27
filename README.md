@@ -30,8 +30,11 @@ company's annual, half-year or quarterly report. Amounts and ratios are
 financial indicators for one or up to 100 companies, every line of the full
 statements, the XBRL files of a report and the XBRL taxonomy forms.
 
-The other groups (equity disclosures, major event reports, securities
-registration) come later.
+지분공시 종합정보 (`DS004`), in `opendart::ownership`: 5% holding reports
+(`majorstock.json`) and executive and major shareholder holdings
+(`elestock.json`).
+
+The other groups (major event reports, securities registration) come later.
 
 ## Usage
 

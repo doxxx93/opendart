@@ -130,6 +130,18 @@ pub(crate) fn opt_iso_date<'de, D: Deserializer<'de>>(de: D) -> Result<Option<Da
     }
 }
 
+/// `deserialize_with` for a required date in either `YYYYMMDD` or
+/// `YYYY-MM-DD`, for fields where the guide and the replies disagree.
+pub(crate) fn any_date<'de, D: Deserializer<'de>>(de: D) -> Result<Date, D::Error> {
+    let text = String::deserialize(de)?;
+    let parsed = if text.len() == 8 {
+        parse_date(&text)
+    } else {
+        parse_iso_date(&text)
+    };
+    parsed.map_err(D::Error::custom)
+}
+
 fn parse_iso_date(text: &str) -> Result<Date, BoxError> {
     let bytes = text.as_bytes();
     let digits = |range: std::ops::Range<usize>| bytes[range].iter().all(u8::is_ascii_digit);
@@ -201,6 +213,22 @@ mod tests {
         ] {
             assert!(parse_iso_date(bad).is_err(), "{bad:?} should not parse");
         }
+    }
+
+    #[test]
+    fn any_date_takes_both_forms() {
+        #[derive(Deserialize)]
+        struct Row {
+            #[serde(deserialize_with = "any_date")]
+            day: Date,
+        }
+        for json in [r#"{"day":"20241220"}"#, r#"{"day":"2024-12-20"}"#] {
+            assert_eq!(
+                serde_json::from_str::<Row>(json).unwrap().day,
+                date(2024, 12, 20)
+            );
+        }
+        assert!(serde_json::from_str::<Row>(r#"{"day":"2024.12.20"}"#).is_err());
     }
 
     #[test]
