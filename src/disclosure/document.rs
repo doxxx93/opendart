@@ -7,8 +7,9 @@ use crate::{Client, Error, decode};
 
 const ENDPOINT: &str = "document.xml";
 
-/// One file from a filing's original documents, returned by
-/// [`Client::document`].
+/// One file from a ZIP that OpenDART returns: a filing's original
+/// documents ([`Client::document`]) or its XBRL financial statements
+/// ([`Client::fnltt_xbrl`]).
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct DocumentFile {
@@ -31,7 +32,7 @@ impl Client {
     /// [`Status::NoData`](crate::Status::NoData).
     pub async fn document(&self, rcept_no: &str) -> Result<Vec<DocumentFile>, Error> {
         let body = self.get(ENDPOINT, &query(rcept_no)).await?;
-        parse(&body)
+        files(ENDPOINT, &body)
     }
 }
 
@@ -39,23 +40,24 @@ fn query(rcept_no: &str) -> Query {
     vec![("rcept_no", rcept_no.to_owned())]
 }
 
-fn parse(body: &[u8]) -> Result<Vec<DocumentFile>, Error> {
-    let mut archive = decode::zip(ENDPOINT, body)?;
+/// Every file in a ZIP reply, or the error OpenDART sent instead.
+pub(crate) fn files(endpoint: &'static str, body: &[u8]) -> Result<Vec<DocumentFile>, Error> {
+    let mut archive = decode::zip(endpoint, body)?;
     let mut files = Vec::with_capacity(archive.len());
     for index in 0..archive.len() {
         let mut file = archive
             .by_index(index)
-            .map_err(|err| Error::decode(ENDPOINT, err))?;
+            .map_err(|err| Error::decode(endpoint, err))?;
         if file.is_dir() {
             continue;
         }
         let name = file
             .name()
-            .map_err(|err| Error::decode(ENDPOINT, err))?
+            .map_err(|err| Error::decode(endpoint, err))?
             .into_owned();
         let mut content = Vec::new();
         file.read_to_end(&mut content)
-            .map_err(|err| Error::decode(ENDPOINT, err))?;
+            .map_err(|err| Error::decode(endpoint, err))?;
         files.push(DocumentFile { name, content });
     }
     Ok(files)
@@ -69,7 +71,7 @@ mod tests {
     #[test]
     fn unpacks_the_real_zip() {
         let body = include_bytes!("../../tests/fixtures/document/20261126800680.zip");
-        let files = parse(body).unwrap();
+        let files = files(ENDPOINT, body).unwrap();
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].name, "20261126800680.xml");
         assert_eq!(files[0].content.len(), 7964);
@@ -84,7 +86,7 @@ mod tests {
     #[test]
     fn unknown_receipt_number() {
         let body = include_bytes!("../../tests/fixtures/document/not_found.xml");
-        match parse(body).unwrap_err() {
+        match files(ENDPOINT, body).unwrap_err() {
             Error::Api {
                 status, message, ..
             } => {

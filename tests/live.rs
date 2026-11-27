@@ -6,6 +6,7 @@
 //! ```
 
 use opendart::disclosure::ListRequest;
+use opendart::financial::Consolidation;
 use opendart::jiff::civil::date;
 use opendart::{Client, ReportCode, ReportRequest, Status};
 
@@ -72,6 +73,29 @@ async fn individual_pay_v2() {
     let report = client().indvdl_by_pay_v2(&request).await.unwrap().unwrap();
     assert_eq!(report.corp_code, "00126380");
     assert!(!report.group.is_empty());
+}
+
+#[tokio::test]
+#[ignore = "calls the live OpenDART API"]
+async fn full_statements() {
+    let request = ReportRequest::new("00126380", 2025, ReportCode::Annual);
+    let lines = client()
+        .fnltt_singl_acnt_all(&request, Consolidation::Consolidated)
+        .await
+        .unwrap();
+    let assets = lines
+        .iter()
+        .find(|line| line.account_id == "ifrs-full_Assets")
+        .unwrap();
+    assert!(
+        assets
+            .thstrm_amount
+            .as_ref()
+            .unwrap()
+            .parse::<i64>()
+            .unwrap()
+            > 0
+    );
 }
 
 #[tokio::test]

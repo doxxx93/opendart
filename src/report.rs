@@ -1,4 +1,4 @@
-//! The request shared by the periodic report endpoints (`DS002`, `DS003`).
+//! The requests shared by the periodic report endpoints (`DS002`, `DS003`).
 
 use serde::de::DeserializeOwned;
 
@@ -68,21 +68,83 @@ impl ReportRequest {
     }
 }
 
+/// The same periodic report of several companies, for the multi-company
+/// endpoints such as [`Client::fnltt_multi_acnt`].
+///
+/// OpenDART takes at most 100 companies per request; more fail with
+/// [`Status::TooManyCompanies`](crate::Status::TooManyCompanies).
+///
+/// ```
+/// use opendart::{MultiReportRequest, ReportCode};
+///
+/// // Samsung Electronics and SK hynix, annual reports for 2025.
+/// let request = MultiReportRequest::new(["00126380", "00164779"], 2025, ReportCode::Annual);
+/// ```
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct MultiReportRequest {
+    corp_codes: Vec<String>,
+    bsns_year: i16,
+    reprt_code: ReportCode,
+}
+
+impl MultiReportRequest {
+    /// A request for the reports of `corp_codes` (8 digits each) for fiscal
+    /// year `bsns_year`.
+    pub fn new<I>(corp_codes: I, bsns_year: i16, reprt_code: ReportCode) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Into<String>,
+    {
+        MultiReportRequest {
+            corp_codes: corp_codes.into_iter().map(Into::into).collect(),
+            bsns_year,
+            reprt_code,
+        }
+    }
+
+    pub(crate) fn query(&self) -> Query {
+        vec![
+            ("corp_code", self.corp_codes.join(",")),
+            ("bsns_year", self.bsns_year.to_string()),
+            ("reprt_code", self.reprt_code.code().to_owned()),
+        ]
+    }
+}
+
 impl Client {
-    /// Fetches a `list` of rows for one report; no data is an empty list.
+    /// Fetches the `list` of rows of a JSON endpoint; no data is an empty
+    /// list.
+    pub(crate) async fn rows<T: DeserializeOwned>(
+        &self,
+        endpoint: &'static str,
+        query: &Query,
+    ) -> Result<Vec<T>, Error> {
+        let body = self.get(endpoint, query).await?;
+        decode::rows(endpoint, &body)
+    }
+
+    /// [`rows`](Client::rows) for one company's report.
     pub(crate) async fn report_rows<T: DeserializeOwned>(
         &self,
         endpoint: &'static str,
         request: &ReportRequest,
     ) -> Result<Vec<T>, Error> {
-        let body = self.get(endpoint, &request.query()).await?;
-        decode::rows(endpoint, &body)
+        self.rows(endpoint, &request.query()).await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn multi_request_joins_the_companies() {
+        let request = MultiReportRequest::new(["00126380", "00164779"], 2025, ReportCode::Annual);
+        assert_eq!(
+            request.query()[0],
+            ("corp_code", "00126380,00164779".to_owned())
+        );
+    }
 
     #[test]
     fn query_uses_the_wire_codes() {

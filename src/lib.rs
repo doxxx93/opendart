@@ -18,7 +18,8 @@
 //! # Naming
 //!
 //! Modules follow the API groups of the [개발가이드]: [`disclosure`] is
-//! 공시정보 (`DS001`) and [`periodic`] is 정기보고서 주요정보 (`DS002`). Methods are the endpoint names in
+//! 공시정보 (`DS001`), [`periodic`] is 정기보고서 주요정보 (`DS002`) and
+//! [`financial`] is 정기보고서 재무정보 (`DS003`). Methods are the endpoint names in
 //! snake case, and request setters and response fields keep the OpenDART
 //! parameter names (`rcept_no`, `bgn_de`, `induty_code`), so the official
 //! guide can be read side by side with this crate.
@@ -64,6 +65,7 @@ mod corp_class;
 mod decode;
 pub mod disclosure;
 mod error;
+pub mod financial;
 #[cfg(test)]
 mod guide_check;
 mod number;
@@ -76,6 +78,6 @@ pub use error::{Error, Status};
 /// Re-export of the `jiff` version used for dates.
 pub use jiff;
 pub use number::Number;
-pub use report::{ReportCode, ReportRequest};
+pub use report::{MultiReportRequest, ReportCode, ReportRequest};
 /// Re-export of the `reqwest` version [`Client::from_reqwest`] takes.
 pub use reqwest;
