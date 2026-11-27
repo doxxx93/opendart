@@ -54,7 +54,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@1.88
+      # The version goes in `toolchain`, not the ref: Dependabot treats refs
+      # like `@1.88` as action versions and bumps them.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.88"
       - uses: Swatinem/rust-cache@v2
       - run: cargo check --lib --all-features
 
