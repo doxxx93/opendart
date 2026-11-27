@@ -9,8 +9,9 @@ use crate::Error;
 const BASE_URL: &str = "https://opendart.fss.or.kr/api/";
 const USER_AGENT: &str = concat!("opendart-rs/", env!("CARGO_PKG_VERSION"));
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
-/// Long enough for the 3.6 MB `corpCode.xml` download on a slow link.
-const TIMEOUT: Duration = Duration::from_secs(60);
+/// A per-read limit instead of a whole-request one: from a GitHub runner in
+/// the US, the 3.6 MB `corpCode.xml` download took longer than 60 seconds.
+const READ_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Query parameters for one request, as `(name, value)` pairs.
 pub(crate) type Query = Vec<(&'static str, String)>;
@@ -33,7 +34,9 @@ pub struct Client {
 impl Client {
     /// Creates a client with a default [`reqwest::Client`]: an
     /// `opendart-rs/<version>` User-Agent, a 10 second connect timeout and
-    /// a 60 second timeout for each whole request, body included.
+    /// a 30 second read timeout. The read timeout fails a request when no
+    /// data arrives for 30 seconds; there is no limit on the whole request,
+    /// so large downloads over slow links still finish.
     ///
     /// To change these, or to set a proxy, TLS options or a shared
     /// connection pool, use [`Client::from_reqwest`].
@@ -46,7 +49,7 @@ impl Client {
         let http = reqwest::Client::builder()
             .user_agent(USER_AGENT)
             .connect_timeout(CONNECT_TIMEOUT)
-            .timeout(TIMEOUT)
+            .read_timeout(READ_TIMEOUT)
             .build()
             .expect("failed to build the reqwest client");
         Self::from_reqwest(http, api_key)
