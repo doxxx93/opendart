@@ -19,8 +19,9 @@
 //!
 //! Modules follow the API groups of the [개발가이드]: [`disclosure`] is
 //! 공시정보 (`DS001`), [`periodic`] is 정기보고서 주요정보 (`DS002`),
-//! [`financial`] is 정기보고서 재무정보 (`DS003`) and [`ownership`] is
-//! 지분공시 종합정보 (`DS004`). Methods are the endpoint names in
+//! [`financial`] is 정기보고서 재무정보 (`DS003`), [`ownership`] is
+//! 지분공시 종합정보 (`DS004`) and [`major_event`] is 주요사항보고서
+//! 주요정보 (`DS005`). Methods are the endpoint names in
 //! snake case, and request setters and response fields keep the OpenDART
 //! parameter names (`rcept_no`, `bgn_de`, `induty_code`), so the official
 //! guide can be read side by side with this crate.
@@ -63,12 +64,14 @@
 
 mod client;
 mod corp_class;
+mod date_range;
 mod decode;
 pub mod disclosure;
 mod error;
 pub mod financial;
 #[cfg(test)]
 mod guide_check;
+pub mod major_event;
 mod number;
 pub mod ownership;
 pub mod periodic;
@@ -76,6 +79,7 @@ mod report;
 
 pub use client::Client;
 pub use corp_class::CorpClass;
+pub use date_range::DateRangeRequest;
 pub use error::{Error, Status};
 /// Re-export of the `jiff` version used for dates.
 pub use jiff;

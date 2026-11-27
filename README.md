@@ -34,7 +34,13 @@ statements, the XBRL files of a report and the XBRL taxonomy forms.
 (`majorstock.json`) and executive and major shareholder holdings
 (`elestock.json`).
 
-The other groups (major event reports, securities registration) come later.
+주요사항보고서 주요정보 (`DS005`), in `opendart::major_event`: all 36 major
+event reports (capital increases and reductions, convertible and other bond
+issues, treasury stock, business and asset transfers, mergers, splits,
+defaults, lawsuits and others), each taking a `DateRangeRequest` for one
+company and a range of receipt dates.
+
+증권신고서 주요정보 (`DS006`) comes later.
 
 ## Usage
 

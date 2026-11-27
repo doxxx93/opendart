@@ -8,7 +8,7 @@
 use opendart::disclosure::ListRequest;
 use opendart::financial::Consolidation;
 use opendart::jiff::civil::date;
-use opendart::{Client, ReportCode, ReportRequest, Status};
+use opendart::{Client, DateRangeRequest, ReportCode, ReportRequest, Status};
 
 fn client() -> Client {
     Client::new(std::env::var("OPENDART_API_KEY").expect("OPENDART_API_KEY is not set"))
@@ -103,6 +103,16 @@ async fn full_statements() {
 async fn major_holdings() {
     let rows = client().majorstock("00126380").await.unwrap();
     assert!(rows.iter().any(|row| row.repror == "삼성물산"));
+}
+
+#[tokio::test]
+#[ignore = "calls the live OpenDART API"]
+async fn treasury_stock_decisions() {
+    // The example in the guide: Hyundai Motor in 2019.
+    let request = DateRangeRequest::new("00164742", date(2019, 1, 1), date(2019, 12, 31));
+    let rows = client().tsstk_aq_decsn(&request).await.unwrap();
+    assert!(!rows.is_empty());
+    assert!(rows.iter().all(|row| row.corp_code == "00164742"));
 }
 
 #[tokio::test]
