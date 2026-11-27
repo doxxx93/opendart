@@ -7,7 +7,7 @@
 
 use opendart::disclosure::ListRequest;
 use opendart::jiff::civil::date;
-use opendart::{Client, Status};
+use opendart::{Client, ReportCode, ReportRequest, Status};
 
 fn client() -> Client {
     Client::new(std::env::var("OPENDART_API_KEY").expect("OPENDART_API_KEY is not set"))
@@ -51,6 +51,27 @@ async fn document_files() {
     let files = client().document("20261126800680").await.unwrap();
     assert_eq!(files.len(), 1);
     assert_eq!(files[0].name, "20261126800680.xml");
+}
+
+#[tokio::test]
+#[ignore = "calls the live OpenDART API"]
+async fn dividends() {
+    let request = ReportRequest::new("00126380", 2025, ReportCode::Annual);
+    let rows = client().alot_matter(&request).await.unwrap();
+    let par_value = rows
+        .iter()
+        .find(|row| row.se == "주당액면가액(원)")
+        .unwrap();
+    assert_eq!(par_value.thstrm.as_ref().unwrap().parse::<i64>(), Ok(100));
+}
+
+#[tokio::test]
+#[ignore = "calls the live OpenDART API"]
+async fn individual_pay_v2() {
+    let request = ReportRequest::new("00126380", 2026, ReportCode::HalfYear);
+    let report = client().indvdl_by_pay_v2(&request).await.unwrap().unwrap();
+    assert_eq!(report.corp_code, "00126380");
+    assert!(!report.group.is_empty());
 }
 
 #[tokio::test]

@@ -7,7 +7,8 @@ OpenDART(금융감독원 전자공시) API를 위한 Rust 클라이언트입니�
 
 ## Status
 
-Early development, not published yet. The first group of endpoints works.
+Early development, not published yet. 0.1.0 ships once all 85 endpoints of
+the guide are in.
 
 ## Scope
 
@@ -18,8 +19,15 @@ Early development, not published yet. The first group of endpoints works.
 - `document.xml`: the original documents of a filing (a ZIP)
 - `corpCode.xml`: the corp code to stock code mapping (a ZIP holding one XML file)
 
-The other groups (periodic report data, financial statements, equity
-disclosures, major event reports, securities registration) come later.
+정기보고서 주요정보 (`DS002`), in `opendart::periodic`: all 30 endpoints
+(dividends, shareholders, executives and pay, employees, debt balances,
+auditors, use of funds and others), each taking a `ReportRequest` for one
+company's annual, half-year or quarterly report. Amounts and ratios are
+`opendart::Number`, the text OpenDART sent, which you parse into `i64`,
+`f64` or a decimal type.
+
+The other groups (financial statements, equity disclosures, major event
+reports, securities registration) come later.
 
 ## Usage
 

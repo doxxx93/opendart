@@ -7,6 +7,7 @@ use jiff::civil::Date;
 use serde::de::{DeserializeOwned, Error as _};
 use serde::{Deserialize, Deserializer};
 
+use crate::Number;
 use crate::error::{BoxError, Error, Status};
 
 /// The `status` and `message` fields every OpenDART reply carries.
@@ -38,6 +39,30 @@ pub(crate) fn json<T: DeserializeOwned>(endpoint: &'static str, body: &[u8]) -> 
         serde_json::from_slice(body).map_err(|err| Error::decode(endpoint, err))?;
     envelope.into_result(endpoint)?;
     serde_json::from_slice(body).map_err(|err| Error::decode(endpoint, err))
+}
+
+/// The `list` of a JSON reply that returns rows.
+#[derive(Deserialize)]
+#[serde(bound = "T: DeserializeOwned")]
+struct Rows<T> {
+    #[serde(default)]
+    list: Vec<T>,
+}
+
+/// Decodes the `list` of a JSON reply. [`Status::NoData`] means there are
+/// no rows, so it becomes an empty list rather than an error.
+pub(crate) fn rows<T: DeserializeOwned>(
+    endpoint: &'static str,
+    body: &[u8],
+) -> Result<Vec<T>, Error> {
+    match json::<Rows<T>>(endpoint, body) {
+        Ok(rows) => Ok(rows.list),
+        Err(Error::Api {
+            status: Status::NoData,
+            ..
+        }) => Ok(Vec::new()),
+        Err(err) => Err(err),
+    }
 }
 
 /// Opens a ZIP body, or turns the XML error reply OpenDART sends instead
@@ -97,6 +122,39 @@ pub(crate) fn opt_date<'de, D: Deserializer<'de>>(de: D) -> Result<Option<Date>,
     }
 }
 
+/// `deserialize_with` for a `YYYY-MM-DD` field that may be blank.
+pub(crate) fn opt_iso_date<'de, D: Deserializer<'de>>(de: D) -> Result<Option<Date>, D::Error> {
+    match opt_string(de)? {
+        None => Ok(None),
+        Some(text) => parse_iso_date(&text).map(Some).map_err(D::Error::custom),
+    }
+}
+
+fn parse_iso_date(text: &str) -> Result<Date, BoxError> {
+    let bytes = text.as_bytes();
+    let digits = |range: std::ops::Range<usize>| bytes[range].iter().all(u8::is_ascii_digit);
+    if bytes.len() != 10
+        || bytes[4] != b'-'
+        || bytes[7] != b'-'
+        || !digits(0..4)
+        || !digits(5..7)
+        || !digits(8..10)
+    {
+        return Err(format!("expected a YYYY-MM-DD date, got {text:?}").into());
+    }
+    Ok(Date::new(
+        text[0..4].parse()?,
+        text[5..7].parse()?,
+        text[8..10].parse()?,
+    )?)
+}
+
+/// `deserialize_with` for a numeric column. Blank values and a lone `-`
+/// become `None`; anything else is kept as text in a [`Number`].
+pub(crate) fn number<'de, D: Deserializer<'de>>(de: D) -> Result<Option<Number>, D::Error> {
+    Ok(opt_string(de)?.filter(|text| text != "-").map(Number::new))
+}
+
 /// `deserialize_with` for a string that OpenDART leaves blank (`""` or
 /// `" "`) when there is no value, such as the stock code of an unlisted
 /// company. Surrounding whitespace is trimmed.
@@ -128,6 +186,53 @@ mod tests {
         for bad in ["", "2026112", "2026-11-26", "20261332", "abcdefgh"] {
             assert!(parse_date(bad).is_err(), "{bad:?} should not parse");
         }
+    }
+
+    #[test]
+    fn iso_dates_parse() {
+        assert_eq!(parse_iso_date("2025-12-31").unwrap(), date(2025, 12, 31));
+        for bad in [
+            "",
+            "20251231",
+            "2025-1-31",
+            "2025-13-01",
+            "2025-12-3x",
+            "２０２５-12-31",
+        ] {
+            assert!(parse_iso_date(bad).is_err(), "{bad:?} should not parse");
+        }
+    }
+
+    #[test]
+    fn numbers_drop_blanks_and_dashes() {
+        #[derive(Deserialize)]
+        struct Row {
+            #[serde(default, deserialize_with = "number")]
+            value: Option<Number>,
+        }
+        let value = |json: &str| serde_json::from_str::<Row>(json).unwrap().value;
+        assert_eq!(value(r#"{"value":"  1,234 "}"#).unwrap().as_str(), "1,234");
+        assert_eq!(value(r#"{"value":"-1,234"}"#).unwrap().as_str(), "-1,234");
+        for none in [
+            r#"{"value":""}"#,
+            r#"{"value":" - "}"#,
+            r#"{"value":null}"#,
+            "{}",
+        ] {
+            assert_eq!(value(none), None, "{none}");
+        }
+    }
+
+    #[test]
+    fn rows_treat_no_data_as_empty() {
+        let body = include_bytes!("../tests/fixtures/list/no_data.json");
+        assert!(
+            rows::<serde_json::Value>("alotMatter.json", body)
+                .unwrap()
+                .is_empty()
+        );
+        let body = include_bytes!("../tests/fixtures/error/unregistered_key.json");
+        assert!(rows::<serde_json::Value>("alotMatter.json", body).is_err());
     }
 
     #[test]
