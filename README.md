@@ -7,8 +7,8 @@ OpenDART(금융감독원 전자공시) API를 위한 Rust 클라이언트입니�
 
 ## Status
 
-Early development, not published yet. 0.1.0 ships once all 85 endpoints of
-the guide are in.
+Early development, not published yet. All 85 endpoints of the guide are in;
+0.1.0 is next.
 
 ## Scope
 
@@ -40,7 +40,9 @@ issues, treasury stock, business and asset transfers, mergers, splits,
 defaults, lawsuits and others), each taking a `DateRangeRequest` for one
 company and a range of receipt dates.
 
-증권신고서 주요정보 (`DS006`) comes later.
+증권신고서 주요정보 (`DS006`), in `opendart::registration`: equity, debt and
+depositary receipt registration statements and those for mergers, share
+exchanges and splits, grouped as in the reply.
 
 ## Usage
 

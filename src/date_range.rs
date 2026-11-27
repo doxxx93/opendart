@@ -8,8 +8,8 @@ use crate::client::Query;
 use crate::{Client, Error, decode};
 
 /// One company and a range of receipt dates (`corp_code`, `bgn_de`,
-/// `end_de`), the parameters every [`major_event`](crate::major_event)
-/// endpoint takes. OpenDART has data from 2015 on.
+/// `end_de`), the parameters every [`major_event`](crate::major_event) and
+/// [`registration`](crate::registration) endpoint takes. OpenDART has data from 2015 on.
 ///
 /// ```
 /// use opendart::DateRangeRequest;
