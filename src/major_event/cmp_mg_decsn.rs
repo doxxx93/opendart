@@ -218,8 +218,9 @@ pub struct Merger {
 impl Client {
     /// 회사합병 결정 (`cmpMgDecsn.json`): merger decisions filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn cmp_mg_decsn(&self, request: &DateRangeRequest) -> Result<Vec<Merger>, Error> {
         self.date_range_rows(ENDPOINT, request).await
     }

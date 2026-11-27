@@ -51,8 +51,9 @@ impl Client {
     /// 임원ㆍ주요주주 소유보고 (`elestock.json`): every report of shares
     /// owned by executives and major shareholders of `corp_code`.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn elestock(&self, corp_code: &str) -> Result<Vec<InsiderHolding>, Error> {
         self.rows(ENDPOINT, &super::query(corp_code)).await
     }

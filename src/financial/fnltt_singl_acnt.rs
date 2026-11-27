@@ -90,8 +90,9 @@ impl Client {
     /// liabilities, equity, revenue, operating income, net income) from one
     /// company's report.
     ///
-    /// Returns an empty list when the report has no financial statements
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn fnltt_singl_acnt(&self, request: &ReportRequest) -> Result<Vec<Account>, Error> {
         self.report_rows(ENDPOINT, request).await
     }

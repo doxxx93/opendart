@@ -53,8 +53,9 @@ impl Client {
     /// 최대주주 현황 (`hyslrSttus.json`): shares held by the largest shareholder and
     /// related parties.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn hyslr_sttus(
         &self,
         request: &ReportRequest,

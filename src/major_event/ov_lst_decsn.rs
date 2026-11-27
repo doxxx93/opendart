@@ -73,8 +73,9 @@ impl Client {
     /// 해외 증권시장 주권등 상장 결정 (`ovLstDecsn.json`): decisions to list shares on an
     /// overseas market filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn ov_lst_decsn(
         &self,
         request: &DateRangeRequest,

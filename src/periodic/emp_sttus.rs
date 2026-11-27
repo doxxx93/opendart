@@ -69,8 +69,9 @@ pub struct EmployeeCount {
 impl Client {
     /// 직원 현황 (`empSttus.json`): employees by division and sex.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn emp_sttus(&self, request: &ReportRequest) -> Result<Vec<EmployeeCount>, Error> {
         self.report_rows(ENDPOINT, request).await
     }

@@ -55,8 +55,9 @@ impl Client {
     /// 해외 증권시장 주권등 상장폐지 결정 (`ovDlstDecsn.json`): decisions to delist shares
     /// from an overseas market filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn ov_dlst_decsn(
         &self,
         request: &DateRangeRequest,

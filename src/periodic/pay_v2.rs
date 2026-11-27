@@ -98,8 +98,9 @@ impl Client {
     ///
     /// Covers reports filed from 2026-05 on; earlier reports are in
     /// [`hmv_audit_indvdl_by_sttus`](Client::hmv_audit_indvdl_by_sttus).
-    /// Returns `None` when the report has no such section
-    /// ([`Status::NoData`]).
+    /// Returns `None` when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn hmv_audit_indvdl_by_sttus_v2(
         &self,
         request: &ReportRequest,
@@ -113,8 +114,10 @@ impl Client {
     /// stock-based pay.
     ///
     /// Covers reports filed from 2026-05 on; earlier reports are in
-    /// [`indvdl_by_pay`](Client::indvdl_by_pay). Returns `None` when the
-    /// report has no such section ([`Status::NoData`]).
+    /// [`indvdl_by_pay`](Client::indvdl_by_pay). Returns `None` when
+    /// OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn indvdl_by_pay_v2(
         &self,
         request: &ReportRequest,

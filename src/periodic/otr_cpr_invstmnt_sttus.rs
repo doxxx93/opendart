@@ -19,7 +19,7 @@ pub struct Investment {
     pub corp_code: String,
     /// 법인명
     pub corp_name: String,
-    /// 법인명
+    /// 법인명: the company invested in.
     #[serde(default)]
     pub inv_prm: String,
     /// 최초 취득 일자
@@ -72,8 +72,9 @@ pub struct Investment {
 impl Client {
     /// 타법인 출자현황 (`otrCprInvstmntSttus.json`): investments in other companies.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn otr_cpr_invstmnt_sttus(
         &self,
         request: &ReportRequest,

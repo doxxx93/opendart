@@ -2,9 +2,9 @@
 //! `DS006`.
 //!
 //! Every endpoint takes a [`DateRangeRequest`](crate::DateRangeRequest) and
-//! returns the statements filed in the range, grouped the way the reply
-//! groups them (일반사항, 인수인정보, 자금의사용목적 and so on), one `Vec`
-//! per group. No statements give empty groups.
+//! returns one value per statement filed in the range, with a `Vec` for
+//! each group of the reply (일반사항, 인수인정보, 자금의사용목적 and so on).
+//! No statements give an empty list.
 //!
 //! | Endpoint | Method | Statement | 개발가이드 |
 //! |---|---|---|---|

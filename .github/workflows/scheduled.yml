@@ -55,12 +55,17 @@ jobs:
   live:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '41 1 * * 1'
     runs-on: ubuntu-latest
+    # About 4 minutes from GitHub's US runners, mostly corpCode.xml.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      # Build first without the key, so build scripts of dependencies never
+      # see it.
+      - run: cargo test --all-features --test live --no-run
       # One request at a time: from the US, OpenDART answers in about 3 s.
       - run: cargo test --all-features --test live -- --ignored --test-threads=1
         env:

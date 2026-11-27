@@ -61,8 +61,9 @@ impl Client {
     /// 사모자금의 사용내역 (`prvsrpCptalUseDtls.json`): use of funds raised by private
     /// placements.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn prvsrp_cptal_use_dtls(
         &self,
         request: &ReportRequest,

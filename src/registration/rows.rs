@@ -281,9 +281,10 @@ pub struct Underwriter {
     /// 인수금액
     #[serde(default, deserialize_with = "decode::number")]
     pub udtamt: Option<Number>,
-    /// 인수대가
-    #[serde(default)]
-    pub udtprc: String,
+    /// 인수대가: an amount in won, or prose such as `인수금액의 0.25%` in debt
+    /// registrations.
+    #[serde(default, deserialize_with = "decode::number")]
+    pub udtprc: Option<Number>,
     /// 인수방법
     #[serde(default)]
     pub udtmth: String,
@@ -415,9 +416,9 @@ pub struct PartyCompany {
     pub corp_cls: CorpClass,
     /// 고유번호: the company's 8-digit OpenDART code.
     pub corp_code: String,
-    /// 회사명
+    /// 회사명: the company that filed the statement.
     pub corp_name: String,
-    /// 회사명
+    /// 회사명: the company taking part that this row describes.
     #[serde(default)]
     pub cmpnm: String,
     /// 구분

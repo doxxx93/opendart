@@ -133,8 +133,9 @@ impl Client {
     /// 유형자산 양도 결정 (`tgastTrfDecsn.json`): decisions to transfer tangible assets
     /// filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn tgast_trf_decsn(
         &self,
         request: &DateRangeRequest,

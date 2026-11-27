@@ -46,8 +46,9 @@ impl Client {
     /// 회계감사인의 명칭 및 감사의견 (`accnutAdtorNmNdAdtOpinion.json`): external auditor
     /// and audit opinion.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn accnut_adtor_nm_nd_adt_opinion(
         &self,
         request: &ReportRequest,

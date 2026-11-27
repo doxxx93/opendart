@@ -130,8 +130,9 @@ impl Client {
     /// 타법인 주식 및 출자증권 양도결정 (`otcprStkInvscrTrfDecsn.json`): decisions to
     /// transfer shares or equity of another company filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn otcpr_stk_invscr_trf_decsn(
         &self,
         request: &DateRangeRequest,

@@ -55,7 +55,7 @@ pub struct Company {
 }
 
 fn opt_month<'de, D: Deserializer<'de>>(de: D) -> Result<Option<u8>, D::Error> {
-    let Some(text) = decode::opt_string(de)? else {
+    let Some(text) = decode::opt_value(de)? else {
         return Ok(None);
     };
     match text.parse() {

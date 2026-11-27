@@ -62,8 +62,9 @@ impl Client {
     /// 이사·감사 전체의 보수현황(보수지급금액 - 이사·감사 전체) (`hmvAuditAllSttus.json`): total pay
     /// of directors and auditors.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn hmv_audit_all_sttus(
         &self,
         request: &ReportRequest,

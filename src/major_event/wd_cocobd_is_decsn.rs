@@ -61,10 +61,13 @@ pub struct WriteDownContingentBondIssue {
     /// 자금조달의 목적(기타자금 (원))
     #[serde(default, deserialize_with = "decode::number")]
     pub fdpp_etc: Option<Number>,
-    /// 사채의 이율(표면이자율 (%))
+    /// 사채의 이율(표면이자율 (%)): the coupon rate. The other bond
+    /// endpoints, such as [`ConvertibleBondIssue`](super::ConvertibleBondIssue),
+    /// name the coupon `bd_intr_ex`; this one follows its guide page.
     #[serde(default, deserialize_with = "decode::number")]
     pub bd_intr_sf: Option<Number>,
-    /// 사채의 이율(만기이자율 (%))
+    /// 사채의 이율(만기이자율 (%)): the yield to maturity. The other bond
+    /// endpoints name it `bd_intr_sf`.
     #[serde(default, deserialize_with = "decode::number")]
     pub bd_intr_ex: Option<Number>,
     /// 사채만기일
@@ -115,8 +118,9 @@ impl Client {
     /// 상각형 조건부자본증권 발행결정 (`wdCocobdIsDecsn.json`): decisions to issue write-down
     /// contingent capital securities filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn wd_cocobd_is_decsn(
         &self,
         request: &DateRangeRequest,

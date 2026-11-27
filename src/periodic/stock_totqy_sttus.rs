@@ -60,8 +60,9 @@ pub struct ShareCount {
 impl Client {
     /// 주식의 총수 현황 (`stockTotqySttus.json`): total number of shares.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn stock_totqy_sttus(
         &self,
         request: &ReportRequest,

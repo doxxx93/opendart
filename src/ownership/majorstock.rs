@@ -54,8 +54,9 @@ impl Client {
     /// 대량보유 상황보고 (`majorstock.json`): every report of a holding of
     /// 5% or more of the shares of `corp_code` (the 5% rule).
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn majorstock(&self, corp_code: &str) -> Result<Vec<MajorHolding>, Error> {
         self.rows(ENDPOINT, &super::query(corp_code)).await
     }

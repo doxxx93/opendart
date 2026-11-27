@@ -61,8 +61,9 @@ impl Client {
     /// 공모자금의 사용내역 (`pssrpCptalUseDtls.json`): use of funds raised by public
     /// offerings.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn pssrp_cptal_use_dtls(
         &self,
         request: &ReportRequest,

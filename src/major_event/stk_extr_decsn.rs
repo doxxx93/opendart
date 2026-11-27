@@ -181,8 +181,9 @@ impl Client {
     /// 주식교환·이전 결정 (`stkExtrDecsn.json`): decisions on a comprehensive share
     /// exchange or transfer filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn stk_extr_decsn(
         &self,
         request: &DateRangeRequest,

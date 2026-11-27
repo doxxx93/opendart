@@ -40,8 +40,9 @@ impl Client {
     /// 부도발생 (`dfOcr.json`): dishonored bills and defaults filed in the date
     /// range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn df_ocr(&self, request: &DateRangeRequest) -> Result<Vec<DefaultEvent>, Error> {
         self.date_range_rows(ENDPOINT, request).await
     }

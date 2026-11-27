@@ -40,8 +40,9 @@ impl Client {
     /// 회생절차 개시신청 (`ctrcvsBgrq.json`): filings for rehabilitation proceedings
     /// filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn ctrcvs_bgrq(
         &self,
         request: &DateRangeRequest,

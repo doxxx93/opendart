@@ -58,8 +58,9 @@ impl Client {
     /// 자기주식 취득 및 처분 현황 (`tesstkAcqsDspsSttus.json`): acquisition and disposal
     /// of treasury stock.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn tesstk_acqs_dsps_sttus(
         &self,
         request: &ReportRequest,
