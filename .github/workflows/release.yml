@@ -1,0 +1,54 @@
+# Publishes a release when the version in Cargo.toml is not on crates.io
+# yet. A release is a pull request that bumps `version` and moves the
+# `[Unreleased]` section of CHANGELOG.md under the new version; merging it
+# publishes the crate through crates.io trusted publishing (no token
+# secret), pushes the `v<version>` tag and creates the GitHub release with
+# that changelog section. release-plz reads the first section that is not
+# `[Unreleased]`, so a release pull request must move the entries.
+#
+# release-plz's own release pull requests are not used: pull requests
+# opened with GITHUB_TOKEN do not trigger CI, so the checks the main
+# ruleset requires would never run on them.
+#
+# The `release` environment only allows the main branch, and the crates.io
+# trusted publisher names it, so a copy of this workflow on another branch
+# cannot publish.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.repository == 'doxxx93/opendart'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      # Push the tag and create the GitHub release.
+      contents: write
+      # Find the pull request of the released commit.
+      pull-requests: read
+      # crates.io trusted publishing.
+      id-token: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      # The merged commit may differ from what CI tested on the pull
+      # request; test it again before anything is published.
+      - run: cargo test --all-features --locked
+      - uses: release-plz/action@66b324fd6c72d05d2a08568492ecdd62bfb8a62b # v0.5.148
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
