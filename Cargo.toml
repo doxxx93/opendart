@@ -9,7 +9,9 @@ repository = "https://github.com/doxxx93/opendart"
 readme = "README.md"
 keywords = ["opendart", "dart", "korea", "disclosure", "finance"]
 categories = ["api-bindings", "finance"]
-include = ["/src", "/README.md", "/CHANGELOG.md", "/LICENSE-MIT", "/LICENSE-APACHE"]
+# The fixtures and the guide snapshot let the unit tests build from the
+# published crate.
+include = ["/src", "/tests/fixtures", "/spec/guide-snapshot.json", "/README.md", "/CHANGELOG.md", "/LICENSE-MIT", "/LICENSE-APACHE"]
 
 [dependencies]
 jiff = { version = "1", default-features = false, features = ["std"] }

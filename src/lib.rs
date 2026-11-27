@@ -62,6 +62,8 @@ mod corp_class;
 mod decode;
 pub mod disclosure;
 mod error;
+#[cfg(test)]
+mod guide_check;
 
 pub use client::Client;
 pub use corp_class::CorpClass;

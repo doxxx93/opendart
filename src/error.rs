@@ -6,6 +6,8 @@ use std::fmt;
 pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 /// Errors returned by [`Client`](crate::Client) methods.
+///
+/// Every variant names the endpoint that failed, such as `list.json`.
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
 pub enum Error {
@@ -13,12 +15,22 @@ pub enum Error {
     ///
     /// The request URL is removed from the error because it carries the API
     /// key as a query parameter.
-    #[error("HTTP request failed")]
-    Http(#[source] reqwest::Error),
+    #[error("{endpoint}: HTTP request failed")]
+    #[non_exhaustive]
+    Http {
+        /// The endpoint that was requested, e.g. `list.json`.
+        endpoint: &'static str,
+        /// The reqwest error, without the request URL.
+        #[source]
+        source: reqwest::Error,
+    },
 
     /// OpenDART answered with a `status` other than `000`.
-    #[error("OpenDART returned status {status}: {message}")]
+    #[error("{endpoint}: OpenDART returned status {status}: {message}")]
+    #[non_exhaustive]
     Api {
+        /// The endpoint that was requested, e.g. `list.json`.
+        endpoint: &'static str,
         /// The status code, e.g. [`Status::RateLimited`] for `020`.
         status: Status,
         /// The message OpenDART sent with the status, in Korean.
@@ -26,7 +38,8 @@ pub enum Error {
     },
 
     /// The response body did not have the expected shape.
-    #[error("failed to decode the {endpoint} response")]
+    #[error("{endpoint}: failed to decode the response")]
+    #[non_exhaustive]
     Decode {
         /// The endpoint whose response failed to decode, e.g. `list.json`.
         endpoint: &'static str,
@@ -37,6 +50,15 @@ pub enum Error {
 }
 
 impl Error {
+    /// The endpoint that failed, e.g. `list.json`.
+    pub fn endpoint(&self) -> &'static str {
+        match self {
+            Error::Http { endpoint, .. }
+            | Error::Api { endpoint, .. }
+            | Error::Decode { endpoint, .. } => endpoint,
+        }
+    }
+
     /// The OpenDART status, if this is an [`Error::Api`].
     pub fn status(&self) -> Option<&Status> {
         match self {
@@ -60,18 +82,20 @@ impl Error {
             source: source.into(),
         }
     }
-}
 
-impl From<reqwest::Error> for Error {
-    fn from(err: reqwest::Error) -> Self {
-        Error::Http(err.without_url())
+    /// Wraps a reqwest error, dropping the URL because it holds the key.
+    pub(crate) fn http(endpoint: &'static str, source: reqwest::Error) -> Self {
+        Error::Http {
+            endpoint,
+            source: source.without_url(),
+        }
     }
 }
 
 /// An OpenDART `status` code other than `000` (success).
 ///
 /// New codes may be added in minor releases; codes this crate does not know
-/// yet arrive as [`Status::Other`].
+/// yet arrive as [`Status::Unknown`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum Status {
@@ -101,7 +125,7 @@ pub enum Status {
     /// retention period ended.
     KeyExpired,
     /// A code this crate does not know yet.
-    Other(String),
+    Unknown(String),
 }
 
 impl Status {
@@ -121,7 +145,7 @@ impl Status {
             "800" => Status::Maintenance,
             "900" => Status::Undefined,
             "901" => Status::KeyExpired,
-            other => Status::Other(other.to_owned()),
+            other => Status::Unknown(other.to_owned()),
         })
     }
 
@@ -140,7 +164,7 @@ impl Status {
             Status::Maintenance => "800",
             Status::Undefined => "900",
             Status::KeyExpired => "901",
-            Status::Other(code) => code,
+            Status::Unknown(code) => code,
         }
     }
 }
@@ -165,19 +189,23 @@ mod tests {
             assert_eq!(status.code(), code);
         }
         assert_eq!(Status::from_code("000"), None);
-        assert_eq!(Status::from_code("999"), Some(Status::Other("999".into())));
+        assert_eq!(
+            Status::from_code("999"),
+            Some(Status::Unknown("999".into()))
+        );
     }
 
     #[test]
     fn rate_limit_is_detectable() {
         let err = Error::Api {
+            endpoint: "list.json",
             status: Status::RateLimited,
             message: "요청 제한을 초과하였습니다.".into(),
         };
         assert!(err.is_rate_limited());
         assert_eq!(
             err.to_string(),
-            "OpenDART returned status 020: 요청 제한을 초과하였습니다."
+            "list.json: OpenDART returned status 020: 요청 제한을 초과하였습니다."
         );
     }
 }

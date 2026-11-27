@@ -130,6 +130,7 @@ def fetch_site(out):
     snapshot = {"pages": {}, "boards": {}}
     for name, path in PAGES.items():
         text = page_text(fetch(path))
+        require(text.strip(), f"empty {name} page")
         snapshot["pages"][name] = digest(text)
         if site:
             (site / f"{name}.md").write_text(f"Source: {BASE}{path}\n\n{text}\n", encoding="utf-8")
@@ -146,6 +147,7 @@ def fetch_site(out):
                 break
             seen += ids
             page_index += 1
+        require(seen, f"no articles on the {name} board")
         entries = []
         for ntt_id in seen:
             text = page_text(fetch("/cop/bbs/selectArticleDetail.do", {"nttId": ntt_id, "bbsId": bbs_id}))
@@ -311,6 +313,14 @@ def slug(text):
     return re.sub(r"[^0-9A-Za-z가-힣]+", "-", text).strip("-")
 
 
+def require(ok, what):
+    """Stops before anything is written when a page does not look like the
+    guide, e.g. a maintenance page or changed markup. A partial snapshot
+    would otherwise report every missing API as a guide change."""
+    if not ok:
+        raise SystemExit(f"unexpected page content: {what}")
+
+
 def main():
     args = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     args.add_argument("out", nargs="?", default="guide", help="directory for the Markdown copy")
@@ -324,6 +334,7 @@ def main():
     for group in GROUPS:
         group_html = fetch(f"/guide/main.do?apiGrpCd={group}")
         group_name, apis = parse_index(group_html, group)
+        require(apis and group_name != group, f"no APIs or group name in the {group} index")
         group_dir = out / f"{group}-{slug(group_name)}" if out else None
         if group_dir:
             group_dir.mkdir(exist_ok=True)
@@ -334,9 +345,13 @@ def main():
             parser.close()
             sections = [s for s in parser.sections if s["tables"] or s["text"]]
             urls = sorted(set(re.findall(r"https://opendart\.fss\.or\.kr/api/[A-Za-z0-9]+\.(?:json|xml)", page)))
+            entry = api_snapshot(sections)
+            for part in ("endpoints", "request", "response", "messages"):
+                require(entry[part], f"no {part} on {group} {api['api_id']}")
+            require(urls, f"no endpoint URL on {group} {api['api_id']}")
             apis_snapshot.append({
                 "group": group, "group_name": group_name, "api_id": api["api_id"], "name": api["name"],
-                "summary": digest(api["summary"]), **api_snapshot(sections),
+                "summary": digest(api["summary"]), **entry,
             })
             print(group, api["api_id"], api["name"], " ".join(u.rsplit("/", 1)[1] for u in urls))
             if not out:

@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use crate::Error;
 
-const BASE_URL: &str = "https://opendart.fss.or.kr/api/";
+pub(crate) const BASE_URL: &str = "https://opendart.fss.or.kr/api/";
 const USER_AGENT: &str = concat!("opendart-rs/", env!("CARGO_PKG_VERSION"));
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 /// A per-read limit instead of a whole-request one: from a GitHub runner in
@@ -68,7 +68,7 @@ impl Client {
         }
     }
 
-    pub(crate) fn request(&self, endpoint: &str, query: &Query) -> reqwest::RequestBuilder {
+    pub(crate) fn request(&self, endpoint: &'static str, query: &Query) -> reqwest::RequestBuilder {
         self.http
             .get(format!("{BASE_URL}{endpoint}"))
             .query(&[("crtfc_key", &*self.api_key)])
@@ -77,9 +77,19 @@ impl Client {
 
     /// Sends a GET request and returns the body. OpenDART reports its own
     /// errors inside a `200 OK` body, so callers still decode the status.
-    pub(crate) async fn get(&self, endpoint: &str, query: &Query) -> Result<Vec<u8>, Error> {
-        let response = self.request(endpoint, query).send().await?;
-        let body = response.error_for_status()?.bytes().await?;
+    pub(crate) async fn get(
+        &self,
+        endpoint: &'static str,
+        query: &Query,
+    ) -> Result<Vec<u8>, Error> {
+        let http = |err| Error::http(endpoint, err);
+        let response = self.request(endpoint, query).send().await.map_err(http)?;
+        let body = response
+            .error_for_status()
+            .map_err(http)?
+            .bytes()
+            .await
+            .map_err(http)?;
         Ok(body.into())
     }
 }
@@ -123,7 +133,16 @@ mod tests {
             .company("00126380")
             .await
             .unwrap_err();
-        assert!(matches!(err, Error::Http(_)), "{err:?}");
+        assert!(
+            matches!(
+                err,
+                Error::Http {
+                    endpoint: "company.json",
+                    ..
+                }
+            ),
+            "{err:?}"
+        );
 
         let mut text = format!("{err} {err:?}");
         let mut source = std::error::Error::source(&err);

@@ -65,7 +65,8 @@ pub enum SortKey {
 }
 
 impl SortKey {
-    fn code(self) -> &'static str {
+    /// The raw value, e.g. `"crp"`.
+    pub fn code(self) -> &'static str {
         match self {
             SortKey::Date => "date",
             SortKey::Company => "crp",
@@ -84,7 +85,8 @@ pub enum SortOrder {
 }
 
 impl SortOrder {
-    fn code(self) -> &'static str {
+    /// The raw value, e.g. `"asc"`.
+    pub fn code(self) -> &'static str {
         match self {
             SortOrder::Asc => "asc",
             SortOrder::Desc => "desc",
@@ -266,7 +268,7 @@ pub struct Disclosure {
     /// 종목명 for listed companies, 법인명 otherwise.
     pub corp_name: String,
     /// 종목코드: the 6-character stock code, `None` for unlisted companies.
-    #[serde(deserialize_with = "decode::opt_string")]
+    #[serde(default, deserialize_with = "decode::opt_string")]
     pub stock_code: Option<String>,
     /// 법인구분: the market.
     pub corp_cls: CorpClass,
@@ -338,6 +340,8 @@ mod tests {
             .sort_mth(SortOrder::Asc)
             .page_no(2)
             .page_count(100);
+        crate::guide_check::assert_documented(ENDPOINT, &request.query());
+        crate::guide_check::assert_documented(ENDPOINT, &ListRequest::new().query());
         let query = request.query();
         let query: Vec<(&str, &str)> = query.iter().map(|(k, v)| (*k, v.as_str())).collect();
         assert_eq!(

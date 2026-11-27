@@ -3,6 +3,7 @@
 use jiff::civil::Date;
 use serde::{Deserialize, Deserializer};
 
+use crate::client::Query;
 use crate::{Client, CorpClass, Error, decode};
 
 const ENDPOINT: &str = "company.json";
@@ -23,7 +24,7 @@ pub struct Company {
     /// 종목명 for listed companies, 약식명칭 otherwise.
     pub stock_name: String,
     /// 종목코드: the 6-character stock code, `None` for unlisted companies.
-    #[serde(deserialize_with = "decode::opt_string")]
+    #[serde(default, deserialize_with = "decode::opt_string")]
     pub stock_code: Option<String>,
     /// 대표자명: the CEO name(s).
     pub ceo_nm: String,
@@ -46,10 +47,10 @@ pub struct Company {
     /// 업종코드: the KSIC industry code, e.g. `"264"`.
     pub induty_code: String,
     /// 설립일: date of establishment.
-    #[serde(deserialize_with = "decode::opt_date")]
+    #[serde(default, deserialize_with = "decode::opt_date")]
     pub est_dt: Option<Date>,
     /// 결산월: the month the fiscal year ends, 1 to 12.
-    #[serde(deserialize_with = "opt_month")]
+    #[serde(default, deserialize_with = "opt_month")]
     pub acc_mt: Option<u8>,
 }
 
@@ -70,17 +71,24 @@ impl Client {
     ///
     /// An unknown `corp_code` fails with [`Status::NoData`](crate::Status::NoData).
     pub async fn company(&self, corp_code: &str) -> Result<Company, Error> {
-        let body = self
-            .get(ENDPOINT, &vec![("corp_code", corp_code.to_owned())])
-            .await?;
+        let body = self.get(ENDPOINT, &query(corp_code)).await?;
         decode::json(ENDPOINT, &body)
     }
+}
+
+fn query(corp_code: &str) -> Query {
+    vec![("corp_code", corp_code.to_owned())]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use jiff::civil::date;
+
+    #[test]
+    fn request_matches_the_guide() {
+        crate::guide_check::assert_documented(ENDPOINT, &query("00126380"));
+    }
 
     #[test]
     fn parses_a_listed_company() {
@@ -102,5 +110,18 @@ mod tests {
         assert_eq!(company.stock_code, None);
         assert_eq!(company.corp_cls, CorpClass::Etc);
         assert_eq!(company.hm_url, "없음");
+    }
+
+    #[test]
+    fn missing_optional_keys_are_none() {
+        let body = include_bytes!("../../tests/fixtures/company/listed.json");
+        let mut value: serde_json::Value = serde_json::from_slice(body).unwrap();
+        for key in ["stock_code", "est_dt", "acc_mt"] {
+            value.as_object_mut().unwrap().remove(key);
+        }
+        let company: Company = decode::json(ENDPOINT, value.to_string().as_bytes()).unwrap();
+        assert_eq!(company.stock_code, None);
+        assert_eq!(company.est_dt, None);
+        assert_eq!(company.acc_mt, None);
     }
 }

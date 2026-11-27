@@ -2,6 +2,7 @@
 
 use std::io::Read;
 
+use crate::client::Query;
 use crate::{Client, Error, decode};
 
 const ENDPOINT: &str = "document.xml";
@@ -11,7 +12,9 @@ const ENDPOINT: &str = "document.xml";
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct DocumentFile {
-    /// The file name inside the ZIP, e.g. `"20261126800680.xml"`.
+    /// The file name inside the ZIP, e.g. `"20261126800680.xml"`, as the
+    /// archive stores it. It comes from the server, so sanitize it before
+    /// using it as a path.
     pub name: String,
     /// The raw bytes. Documents are DART XML or HTML; do not trust the
     /// declared charset, since some files declare `euc-kr` but are UTF-8.
@@ -27,11 +30,13 @@ impl Client {
     /// An unknown receipt number fails with
     /// [`Status::NoData`](crate::Status::NoData).
     pub async fn document(&self, rcept_no: &str) -> Result<Vec<DocumentFile>, Error> {
-        let body = self
-            .get(ENDPOINT, &vec![("rcept_no", rcept_no.to_owned())])
-            .await?;
+        let body = self.get(ENDPOINT, &query(rcept_no)).await?;
         parse(&body)
     }
+}
+
+fn query(rcept_no: &str) -> Query {
+    vec![("rcept_no", rcept_no.to_owned())]
 }
 
 fn parse(body: &[u8]) -> Result<Vec<DocumentFile>, Error> {
@@ -72,10 +77,17 @@ mod tests {
     }
 
     #[test]
+    fn request_matches_the_guide() {
+        crate::guide_check::assert_documented(ENDPOINT, &query("20261126800680"));
+    }
+
+    #[test]
     fn unknown_receipt_number() {
         let body = include_bytes!("../../tests/fixtures/document/not_found.xml");
         match parse(body).unwrap_err() {
-            Error::Api { status, message } => {
+            Error::Api {
+                status, message, ..
+            } => {
                 assert_eq!(status, Status::NoData);
                 assert_eq!(message, "접수번호 오류 : 20261126999999");
             }
