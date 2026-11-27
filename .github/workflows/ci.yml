@@ -11,12 +11,18 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
 
+# Third-party actions are pinned to commit SHAs; Dependabot updates the pins
+# that carry a version comment. dtolnay/rust-toolchain has no release tags,
+# so it is pinned to its `stable` branch and the Rust version is chosen with
+# the `toolchain` input.
 jobs:
   fmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           components: rustfmt
       - run: cargo fmt --all --check
@@ -25,26 +31,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           components: clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo test --all-features
 
   docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: -D warnings
@@ -54,16 +66,59 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       # The version goes in `toolchain`, not the ref: Dependabot treats refs
       # like `@1.88` as action versions and bumps them.
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
         with:
           toolchain: "1.88"
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
       - run: cargo check --lib --all-features
+
+  # Each feature on its own, plus no features and the defaults.
+  features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      - uses: taiki-e/install-action@073e1fd0bc889c9aee68dbaaa927cde1b5653a83 # v2.90.11
+        with:
+          tool: cargo-hack
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: cargo hack check --lib --each-feature
 
   deny:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          persist-credentials: false
+      - uses: EmbarkStudios/cargo-deny-action@81891abc19297b21343b15ef67dc61e4aea74fda # v2.1.4
+
+  # GitHub secret scanning does not know the OpenDART key format.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Look for committed OpenDART keys
+        run: |
+          if git grep -nE '(OPENDART_API_KEY|crtfc_key)["'\'']?[[:space:]]*[=:][[:space:]]*["'\'']?[0-9a-fA-F]{40}'; then
+            echo "::error::A file looks like it contains an OpenDART API key."
+            exit 1
+          fi
+
+  # Static analysis of these workflows (https://docs.zizmor.sh).
+  zizmor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: pipx run zizmor==1.33.1 --format=github .
+        env:
+          GH_TOKEN: ${{ github.token }}
