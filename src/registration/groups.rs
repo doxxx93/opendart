@@ -1,4 +1,8 @@
 //! Decoding of the grouped replies: `{"group": [{"title": .., "list": [..]}]}`.
+//!
+//! A reply holds every statement filed in the date range, each group mixing
+//! the rows of all of them; the rows are sorted back into one value per
+//! statement by their `rcept_no`.
 
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
@@ -17,12 +21,17 @@ pub(super) struct Group {
     #[serde(default)]
     title: String,
     #[serde(default)]
-    list: serde_json::Value,
+    list: Vec<serde_json::Value>,
 }
 
-/// A registration statement type built from the groups of a reply.
-pub(super) trait FromGroups: Default {
-    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Self, Error>;
+/// A registration statement type, built from the rows that carry its
+/// receipt number.
+pub(super) trait Statement: Sized {
+    fn new(rcept_no: &str) -> Self;
+    fn rcept_no(&self) -> &str;
+    /// Sorts the rows of every group into statements, in order of first
+    /// appearance.
+    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Vec<Self>, Error>;
 }
 
 /// The rows of every group titled `title`; none if the reply has no such
@@ -35,31 +44,43 @@ pub(super) fn take<T: DeserializeOwned>(
 ) -> Result<Vec<T>, Error> {
     let mut rows = Vec::new();
     for group in groups.iter_mut().filter(|group| group.title == title) {
-        let list: Vec<T> = serde_json::from_value(group.list.take())
-            .map_err(|err| Error::decode(endpoint, err))?;
-        rows.extend(list);
+        for value in std::mem::take(&mut group.list) {
+            rows.push(serde_json::from_value(value).map_err(|err| Error::decode(endpoint, err))?);
+        }
     }
     Ok(rows)
 }
 
-/// Decodes a grouped reply; [`Status::NoData`] gives empty groups.
-pub(super) fn parse<T: FromGroups>(endpoint: &'static str, body: &[u8]) -> Result<T, Error> {
+/// The statement with `rcept_no`, added at the end if it is new.
+pub(super) fn statement<'a, S: Statement>(statements: &'a mut Vec<S>, rcept_no: &str) -> &'a mut S {
+    let index = match statements.iter().position(|s| s.rcept_no() == rcept_no) {
+        Some(index) => index,
+        None => {
+            statements.push(S::new(rcept_no));
+            statements.len() - 1
+        }
+    };
+    &mut statements[index]
+}
+
+/// Decodes a grouped reply; [`Status::NoData`] gives no statements.
+pub(super) fn parse<S: Statement>(endpoint: &'static str, body: &[u8]) -> Result<Vec<S>, Error> {
     match decode::json::<Groups>(endpoint, body) {
-        Ok(mut groups) => T::from_groups(endpoint, &mut groups.group),
+        Ok(mut groups) => S::from_groups(endpoint, &mut groups.group),
         Err(Error::Api {
             status: Status::NoData,
             ..
-        }) => Ok(T::default()),
+        }) => Ok(Vec::new()),
         Err(err) => Err(err),
     }
 }
 
 impl Client {
-    pub(super) async fn registration<T: FromGroups>(
+    pub(super) async fn registration<S: Statement>(
         &self,
         endpoint: &'static str,
         request: &DateRangeRequest,
-    ) -> Result<T, Error> {
+    ) -> Result<Vec<S>, Error> {
         let body = self.get(endpoint, &request.query()).await?;
         parse(endpoint, &body)
     }
@@ -70,18 +91,18 @@ mod tests {
     use super::*;
     use crate::registration::RestructuringRegistration;
 
-    #[test]
-    fn no_data_is_empty() {
-        let body = include_bytes!("../../tests/fixtures/list/no_data.json");
-        let statement: RestructuringRegistration = parse("mgRs.json", body).unwrap();
-        assert_eq!(statement, RestructuringRegistration::default());
+    fn statements(body: &[u8]) -> Vec<RestructuringRegistration> {
+        parse("mgRs.json", body).unwrap()
     }
 
     #[test]
-    fn unknown_groups_are_ignored() {
-        let body =
-            br#"{"status":"000","message":"","group":[{"title":"new group","list":[{"x":"1"}]}]}"#;
-        let statement: RestructuringRegistration = parse("mgRs.json", body).unwrap();
-        assert!(statement.general.is_empty());
+    fn no_data_is_empty() {
+        assert!(statements(include_bytes!("../../tests/fixtures/list/no_data.json")).is_empty());
+    }
+
+    #[test]
+    fn unknown_groups_and_missing_lists_are_ignored() {
+        let body = r#"{"status":"000","message":"","group":[{"title":"new group","list":[{"x":"1"}]},{"title":"일반사항"}]}"#;
+        assert!(statements(body.as_bytes()).is_empty());
     }
 }

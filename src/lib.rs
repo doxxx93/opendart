@@ -28,12 +28,22 @@
 //!
 //! # Values
 //!
-//! Dates are [`jiff::civil::Date`]. Blank stock codes and similar optional
-//! values become `None`; other text passes through unchanged. Amounts,
-//! counts and ratios are [`Number`]s holding the text OpenDART sent, which
-//! the caller parses into the type it wants (`i64`, `f64`, a decimal type). OpenDART
-//! reports errors with a `status` code inside the body, which surfaces as
-//! [`Error::Api`].
+//! - Dates that OpenDART itself formats (`rcept_dt`, `stlm_dt`, `est_dt` and
+//!   the like) are [`jiff::civil::Date`]. Dates that companies type into
+//!   their reports (`bddd`, `sbd`, `isu_de`, often `2019년 02월 20일`,
+//!   `1997.10.02` or a range) are text.
+//! - Amounts, counts and ratios are [`Number`]s holding the text OpenDART
+//!   sent, which the caller parses into the type it wants (`i64`, `f64`, a
+//!   decimal type).
+//! - Codes in replies (`reprt_code`, `fs_div`, `sj_div`, `idx_cl_code`) are
+//!   strings as sent; the request parameters that take them are enums such
+//!   as [`ReportCode`].
+//! - Blank stock codes and similar optional values become `None`; other
+//!   text passes through unchanged.
+//!
+//! Response types implement [`serde::Deserialize`] for OpenDART's wire
+//! format, so serde is a public dependency. OpenDART reports errors with a
+//! `status` code inside the body, which surfaces as [`Error::Api`].
 //!
 //! # Request limits
 //!

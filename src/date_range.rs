@@ -26,8 +26,15 @@ pub struct DateRangeRequest {
 }
 
 impl DateRangeRequest {
-    /// Reports about `corp_code` (8 digits) received from `bgn_de` to
+    /// Reports about `corp_code` (8 digits) first received from `bgn_de` to
     /// `end_de`, both included.
+    ///
+    /// The range applies to the date a report was first filed (the guide
+    /// calls both dates 최초접수일), and the row shows its latest version.
+    /// An amendment filed on 2026-11-26 to a report first filed on
+    /// 2026-10-26 comes back, with the amendment's `rcept_no`, for a range
+    /// that includes 2026-10-26, and not for 2026-11-26 alone. To follow new
+    /// filings day by day, watch [`Client::list`] instead.
     pub fn new(corp_code: impl Into<String>, bgn_de: Date, end_de: Date) -> Self {
         DateRangeRequest {
             corp_code: corp_code.into(),

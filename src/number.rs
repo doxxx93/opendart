@@ -16,6 +16,10 @@ use std::str::FromStr;
 ///
 /// Fields of this type are `Option<Number>`: blank values and a lone `-`,
 /// which OpenDART uses for "none", become `None`.
+///
+/// Equality and hashing compare the text, so the same amount sent as
+/// `"566,942,110,000,000"` by one endpoint and `"566942110000000"` by
+/// another is not equal; compare parsed values instead.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Number(String);
 

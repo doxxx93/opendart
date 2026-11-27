@@ -113,8 +113,8 @@ pub struct BondGeneral {
     #[serde(default)]
     pub dpcrn: String,
     /// 표시통화기준발행규모
-    #[serde(default)]
-    pub dpcr_amt: String,
+    #[serde(default, deserialize_with = "decode::number")]
+    pub dpcr_amt: Option<Number>,
     /// 사용지역
     #[serde(default)]
     pub usarn: String,
@@ -143,8 +143,8 @@ pub struct BondGeneral {
     #[serde(default)]
     pub estk_exstk: String,
     /// 지분증권과 연계된 경우(권리행사비율)
-    #[serde(default)]
-    pub estk_exrt: String,
+    #[serde(default, deserialize_with = "decode::number")]
+    pub estk_exrt: Option<Number>,
     /// 지분증권과 연계된 경우(권리행사가격)
     #[serde(default, deserialize_with = "decode::number")]
     pub estk_exprc: Option<Number>,

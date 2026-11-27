@@ -85,7 +85,14 @@ mod tests {
     fn decodes_fixture() {
         let body = include_bytes!("../../tests/fixtures/periodic/prvsrpCptalUseDtls.json");
         let rows: Vec<PrivatePlacementFundUse> = decode::rows(ENDPOINT, body).unwrap();
-        assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].rcept_no, "20260310002820");
+        assert_eq!(rows.len(), 4);
+        assert_eq!(rows[0].rcept_no, "20191227000084");
+        assert_eq!(
+            rows[0]
+                .mtrpt_cptal_use_plan_prcure_amount
+                .as_ref()
+                .map(Number::as_str),
+            Some("2,000,000,000")
+        );
     }
 }

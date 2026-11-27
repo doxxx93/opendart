@@ -19,7 +19,9 @@ pub struct Account {
     /// 사업연도
     #[serde(default)]
     pub bsns_year: String,
-    /// 고유번호: the company's 8-digit OpenDART code.
+    /// 고유번호: the company's 8-digit OpenDART code. The replies carry it
+    /// although the guide does not list it.
+    #[serde(default)]
     pub corp_code: String,
     /// 종목코드
     #[serde(default, deserialize_with = "decode::opt_string")]

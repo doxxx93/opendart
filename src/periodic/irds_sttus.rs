@@ -68,7 +68,11 @@ mod tests {
     fn decodes_fixture() {
         let body = include_bytes!("../../tests/fixtures/periodic/irdsSttus.json");
         let rows: Vec<CapitalChange> = decode::rows(ENDPOINT, body).unwrap();
-        assert_eq!(rows.len(), 2);
-        assert_eq!(rows[0].rcept_no, "20260310002820");
+        assert_eq!(rows.len(), 4);
+        assert_eq!(rows[0].rcept_no, "20191227000084");
+        assert_eq!(
+            rows[0].isu_dcrs_qy.as_ref().map(Number::as_str),
+            Some("173,949")
+        );
     }
 }

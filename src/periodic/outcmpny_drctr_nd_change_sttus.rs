@@ -10,7 +10,7 @@ const ENDPOINT: &str = "outcmpnyDrctrNdChangeSttus.json";
 /// One row of 독립(사외)이사 및 그 변동현황: outside directors and their changes.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]
-pub struct OutsideDirectors {
+pub struct OutsideDirectorCount {
     /// 접수번호: the 14-digit receipt number of the report.
     pub rcept_no: String,
     /// 법인구분: the market.
@@ -48,7 +48,7 @@ impl Client {
     pub async fn outcmpny_drctr_nd_change_sttus(
         &self,
         request: &ReportRequest,
-    ) -> Result<Vec<OutsideDirectors>, Error> {
+    ) -> Result<Vec<OutsideDirectorCount>, Error> {
         self.report_rows(ENDPOINT, request).await
     }
 }
@@ -66,7 +66,7 @@ mod tests {
     #[test]
     fn decodes_fixture() {
         let body = include_bytes!("../../tests/fixtures/periodic/outcmpnyDrctrNdChangeSttus.json");
-        let rows: Vec<OutsideDirectors> = decode::rows(ENDPOINT, body).unwrap();
+        let rows: Vec<OutsideDirectorCount> = decode::rows(ENDPOINT, body).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rcept_no, "20260310002820");
         assert_eq!(rows[0].drctr_co.as_ref().map(Number::as_str), Some("9"));

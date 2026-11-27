@@ -1,20 +1,23 @@
-//! The registration statement types, one `Vec` per group of the reply.
+//! The registration statement types: one value per statement, with the
+//! rows of each group of the reply that carry its receipt number.
 
-use super::groups::{FromGroups, Group, take};
+use super::groups::{Group, Statement, statement, take};
 use super::rows::{
     BondGeneral, FundUse, IssuedSecurity, OfferedSecurity, OfferingGeneral, PartyCompany,
     PutBackRight, RestructuringGeneral, Seller, Underwriter,
 };
 use crate::Error;
 
-/// An equity (지분증권) or depositary receipt (증권예탁증권) registration statement,
-/// grouped as in the reply.
+/// One equity (지분증권) or depositary receipt (증권예탁증권) registration statement.
 ///
-/// Each group holds the rows of every statement filed in the date range;
-/// tell them apart by `rcept_no`. A group the reply leaves out is empty.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// Each field holds the rows of one group of the reply (named in its
+/// doc) that belong to this statement. A group the reply leaves out is
+/// empty.
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct EquityRegistration {
+    /// 접수번호: the 14-digit receipt number of the statement.
+    pub rcept_no: String,
     /// 일반사항
     pub general: Vec<OfferingGeneral>,
     /// 증권의종류
@@ -29,26 +32,65 @@ pub struct EquityRegistration {
     pub put_back_rights: Vec<PutBackRight>,
 }
 
-impl FromGroups for EquityRegistration {
-    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Self, Error> {
-        Ok(EquityRegistration {
-            general: take(endpoint, groups, "일반사항")?,
-            securities: take(endpoint, groups, "증권의종류")?,
-            underwriters: take(endpoint, groups, "인수인정보")?,
-            fund_uses: take(endpoint, groups, "자금의사용목적")?,
-            sellers: take(endpoint, groups, "매출인에관한사항")?,
-            put_back_rights: take(endpoint, groups, "일반청약자환매청구권")?,
-        })
+impl Statement for EquityRegistration {
+    fn new(rcept_no: &str) -> Self {
+        EquityRegistration {
+            rcept_no: rcept_no.to_owned(),
+            general: Vec::new(),
+            securities: Vec::new(),
+            underwriters: Vec::new(),
+            fund_uses: Vec::new(),
+            sellers: Vec::new(),
+            put_back_rights: Vec::new(),
+        }
+    }
+
+    fn rcept_no(&self) -> &str {
+        &self.rcept_no
+    }
+
+    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Vec<Self>, Error> {
+        let mut statements: Vec<Self> = Vec::new();
+        for row in take::<OfferingGeneral>(endpoint, groups, "일반사항")? {
+            statement(&mut statements, &row.rcept_no).general.push(row);
+        }
+        for row in take::<OfferedSecurity>(endpoint, groups, "증권의종류")? {
+            statement(&mut statements, &row.rcept_no)
+                .securities
+                .push(row);
+        }
+        for row in take::<Underwriter>(endpoint, groups, "인수인정보")? {
+            statement(&mut statements, &row.rcept_no)
+                .underwriters
+                .push(row);
+        }
+        for row in take::<FundUse>(endpoint, groups, "자금의사용목적")? {
+            statement(&mut statements, &row.rcept_no)
+                .fund_uses
+                .push(row);
+        }
+        for row in take::<Seller>(endpoint, groups, "매출인에관한사항")? {
+            statement(&mut statements, &row.rcept_no).sellers.push(row);
+        }
+        for row in take::<PutBackRight>(endpoint, groups, "일반청약자환매청구권")? {
+            statement(&mut statements, &row.rcept_no)
+                .put_back_rights
+                .push(row);
+        }
+        Ok(statements)
     }
 }
 
-/// A debt securities (채무증권) registration statement, grouped as in the reply.
+/// One debt securities (채무증권) registration statement.
 ///
-/// Each group holds the rows of every statement filed in the date range;
-/// tell them apart by `rcept_no`. A group the reply leaves out is empty.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// Each field holds the rows of one group of the reply (named in its
+/// doc) that belong to this statement. A group the reply leaves out is
+/// empty.
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct DebtRegistration {
+    /// 접수번호: the 14-digit receipt number of the statement.
+    pub rcept_no: String,
     /// 일반사항
     pub general: Vec<BondGeneral>,
     /// 인수인정보
@@ -59,25 +101,54 @@ pub struct DebtRegistration {
     pub sellers: Vec<Seller>,
 }
 
-impl FromGroups for DebtRegistration {
-    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Self, Error> {
-        Ok(DebtRegistration {
-            general: take(endpoint, groups, "일반사항")?,
-            underwriters: take(endpoint, groups, "인수인정보")?,
-            fund_uses: take(endpoint, groups, "자금의사용목적")?,
-            sellers: take(endpoint, groups, "매출인에관한사항")?,
-        })
+impl Statement for DebtRegistration {
+    fn new(rcept_no: &str) -> Self {
+        DebtRegistration {
+            rcept_no: rcept_no.to_owned(),
+            general: Vec::new(),
+            underwriters: Vec::new(),
+            fund_uses: Vec::new(),
+            sellers: Vec::new(),
+        }
+    }
+
+    fn rcept_no(&self) -> &str {
+        &self.rcept_no
+    }
+
+    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Vec<Self>, Error> {
+        let mut statements: Vec<Self> = Vec::new();
+        for row in take::<BondGeneral>(endpoint, groups, "일반사항")? {
+            statement(&mut statements, &row.rcept_no).general.push(row);
+        }
+        for row in take::<Underwriter>(endpoint, groups, "인수인정보")? {
+            statement(&mut statements, &row.rcept_no)
+                .underwriters
+                .push(row);
+        }
+        for row in take::<FundUse>(endpoint, groups, "자금의사용목적")? {
+            statement(&mut statements, &row.rcept_no)
+                .fund_uses
+                .push(row);
+        }
+        for row in take::<Seller>(endpoint, groups, "매출인에관한사항")? {
+            statement(&mut statements, &row.rcept_no).sellers.push(row);
+        }
+        Ok(statements)
     }
 }
 
-/// A merger (합병), share exchange or transfer (주식의포괄적교환·이전) or split (분할)
-/// registration statement, grouped as in the reply.
+/// One merger (합병), share exchange or transfer (주식의포괄적교환·이전) or split (분할)
+/// registration statement.
 ///
-/// Each group holds the rows of every statement filed in the date range;
-/// tell them apart by `rcept_no`. A group the reply leaves out is empty.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+/// Each field holds the rows of one group of the reply (named in its
+/// doc) that belong to this statement. A group the reply leaves out is
+/// empty.
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct RestructuringRegistration {
+    /// 접수번호: the 14-digit receipt number of the statement.
+    pub rcept_no: String,
     /// 일반사항
     pub general: Vec<RestructuringGeneral>,
     /// 발행증권
@@ -86,12 +157,35 @@ pub struct RestructuringRegistration {
     pub companies: Vec<PartyCompany>,
 }
 
-impl FromGroups for RestructuringRegistration {
-    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Self, Error> {
-        Ok(RestructuringRegistration {
-            general: take(endpoint, groups, "일반사항")?,
-            securities: take(endpoint, groups, "발행증권")?,
-            companies: take(endpoint, groups, "당사회사에관한사항")?,
-        })
+impl Statement for RestructuringRegistration {
+    fn new(rcept_no: &str) -> Self {
+        RestructuringRegistration {
+            rcept_no: rcept_no.to_owned(),
+            general: Vec::new(),
+            securities: Vec::new(),
+            companies: Vec::new(),
+        }
+    }
+
+    fn rcept_no(&self) -> &str {
+        &self.rcept_no
+    }
+
+    fn from_groups(endpoint: &'static str, groups: &mut [Group]) -> Result<Vec<Self>, Error> {
+        let mut statements: Vec<Self> = Vec::new();
+        for row in take::<RestructuringGeneral>(endpoint, groups, "일반사항")? {
+            statement(&mut statements, &row.rcept_no).general.push(row);
+        }
+        for row in take::<IssuedSecurity>(endpoint, groups, "발행증권")? {
+            statement(&mut statements, &row.rcept_no)
+                .securities
+                .push(row);
+        }
+        for row in take::<PartyCompany>(endpoint, groups, "당사회사에관한사항")? {
+            statement(&mut statements, &row.rcept_no)
+                .companies
+                .push(row);
+        }
+        Ok(statements)
     }
 }
