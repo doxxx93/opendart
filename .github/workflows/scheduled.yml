@@ -1,0 +1,42 @@
+# Checks that can fail without any change in this repository.
+name: Scheduled
+
+on:
+  schedule:
+    - cron: "23 1 * * *" # daily 10:23 KST: security advisories
+    - cron: "41 1 * * 1" # Mondays 10:41 KST: live API tests
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # New RustSec advisories appear without a push or a pull request.
+  advisories:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '23 1 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: EmbarkStudios/cargo-deny-action@81891abc19297b21343b15ef67dc61e4aea74fda # v2.1.4
+        with:
+          command: check advisories
+
+  # Real responses can change before the guide does. Five requests a week
+  # against the key's daily quota, which quant's watcher shares.
+  live:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '41 1 * * 1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: cargo test --all-features --test live -- --ignored
+        env:
+          OPENDART_API_KEY: ${{ secrets.OPENDART_API_KEY }}
