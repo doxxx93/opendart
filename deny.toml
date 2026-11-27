@@ -1,0 +1,36 @@
+# cargo-deny configuration: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+all-features = true
+
+[advisories]
+# RustSec vulnerabilities and unsound advisories are errors by default.
+# Unmaintained crates (e.g. chrono since RUSTSEC-2026-0543) fail too.
+unmaintained = "all"
+yanked = "deny"
+
+[licenses]
+# Add licenses here as dependencies need them, with the reason.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    # ICU crates (url -> idna) and unicode-ident (serde_derive -> syn).
+    "Unicode-3.0",
+    # rustls TLS stack: rustls-webpki, untrusted, aws-lc-rs, aws-lc-sys.
+    "ISC",
+    # aws-lc-sys and subtle (both under rustls).
+    "BSD-3-Clause",
+    # webpki-root-certs (rustls-platform-verifier fallback roots).
+    "CDLA-Permissive-2.0",
+    # zlib-rs, the deflate backend zip uses for corpCode.xml.
+    "Zlib",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

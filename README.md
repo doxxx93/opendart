@@ -1,0 +1,69 @@
+# opendart
+
+Typed Rust client for [OpenDART](https://opendart.fss.or.kr), the electronic
+disclosure (DART) API of Korea's Financial Supervisory Service.
+
+OpenDART(금융감독원 전자공시) API를 위한 Rust 클라이언트입니다.
+
+## Status
+
+Early development, not published yet. The first group of endpoints works.
+
+## Scope
+
+공시정보 (`DS001`), in `opendart::disclosure`:
+
+- `list.json`: disclosure search
+- `company.json`: company overview, including the KSIC industry code
+- `document.xml`: the original documents of a filing (a ZIP)
+- `corpCode.xml`: the corp code to stock code mapping (a ZIP holding one XML file)
+
+The other groups (periodic report data, financial statements, equity
+disclosures, major event reports, securities registration) come later.
+
+## Usage
+
+```rust
+use opendart::Client;
+use opendart::disclosure::ListRequest;
+
+#[tokio::main]
+async fn main() -> Result<(), opendart::Error> {
+    let dart = Client::new(std::env::var("OPENDART_API_KEY").unwrap());
+    let page = dart.list(&ListRequest::new().page_count(100)).await?;
+    for filing in &page.list {
+        println!("{} {} {}", filing.rcept_dt, filing.corp_name, filing.report_nm);
+    }
+    Ok(())
+}
+```
+
+Request setters and response fields keep the OpenDART parameter names, so
+the [official guide](https://opendart.fss.or.kr/guide/main.do) applies as is.
+The crate does not throttle requests. OpenDART allows a personal key 20,000
+requests a day and blocks an IP address for an hour after more than 1,000
+requests in a minute (see the crate docs for details).
+
+## API key
+
+OpenDART requires a free API key from <https://opendart.fss.or.kr>. Never
+commit it. Tests that call the live API read `OPENDART_API_KEY` from the
+environment and are marked `#[ignore]`, so `cargo test` runs offline.
+
+## Minimum supported Rust version
+
+Rust 1.88 (edition 2024). Raising the MSRV is treated as a minor version
+change.
+
+## License
+
+Licensed under either of
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <https://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <https://opensource.org/licenses/MIT>)
+
+at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
