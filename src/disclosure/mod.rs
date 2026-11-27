@@ -20,4 +20,5 @@ mod list;
 pub use company::Company;
 pub use corp_code::CorpCodeEntry;
 pub use document::DocumentFile;
+pub(crate) use document::files as zip_files;
 pub use list::{Disclosure, DisclosurePage, DisclosureType, ListRequest, SortKey, SortOrder};

@@ -26,8 +26,12 @@ company's annual, half-year or quarterly report. Amounts and ratios are
 `opendart::Number`, the text OpenDART sent, which you parse into `i64`,
 `f64` or a decimal type.
 
-The other groups (financial statements, equity disclosures, major event
-reports, securities registration) come later.
+정기보고서 재무정보 (`DS003`), in `opendart::financial`: key accounts and
+financial indicators for one or up to 100 companies, every line of the full
+statements, the XBRL files of a report and the XBRL taxonomy forms.
+
+The other groups (equity disclosures, major event reports, securities
+registration) come later.
 
 ## Usage
 
