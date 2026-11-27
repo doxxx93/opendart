@@ -49,3 +49,61 @@ pub(crate) fn assert_documented(endpoint: &str, query: &Query) {
         }
     }
 }
+
+/// Every endpoint file name (`"list.json"`) assigned to a `&str` constant in
+/// `src/`.
+fn implemented() -> std::collections::HashSet<String> {
+    fn walk(dir: &std::path::Path, names: &mut std::collections::HashSet<String>) {
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                walk(&path, names);
+            } else if path.extension().is_some_and(|ext| ext == "rs") {
+                for line in std::fs::read_to_string(&path).unwrap().lines() {
+                    let Some((_, value)) = line.split_once(": &str = \"") else {
+                        continue;
+                    };
+                    if let Some(name) = value.strip_suffix("\";")
+                        && (name.ends_with(".json") || name.ends_with(".xml"))
+                    {
+                        names.insert(name.to_owned());
+                    }
+                }
+            }
+        }
+    }
+    let mut names = std::collections::HashSet::new();
+    walk(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+        &mut names,
+    );
+    names
+}
+
+/// The guide watch updates the snapshot when OpenDART adds an endpoint;
+/// this then fails until the endpoint is implemented.
+#[test]
+fn every_guide_endpoint_is_implemented() {
+    let names = implemented();
+    let mut missing = Vec::new();
+    for api in snapshot()["apis"].as_array().unwrap() {
+        let files: Vec<&str> = api["endpoints"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|endpoint| {
+                endpoint["url"]
+                    .as_str()
+                    .unwrap()
+                    .rsplit('/')
+                    .next()
+                    .unwrap()
+            })
+            .collect();
+        if !files.iter().any(|file| names.contains(*file)) {
+            missing.push(format!("{} {}", api["api_id"], files.join(" ")));
+        }
+    }
+    assert!(missing.is_empty(), "not implemented: {missing:?}");
+    assert_eq!(snapshot()["apis"].as_array().unwrap().len(), 85);
+}

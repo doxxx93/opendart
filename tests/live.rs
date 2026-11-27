@@ -117,6 +117,16 @@ async fn treasury_stock_decisions() {
 
 #[tokio::test]
 #[ignore = "calls the live OpenDART API"]
+async fn merger_registration() {
+    // The example in the guide.
+    let request = DateRangeRequest::new("00109718", date(2019, 1, 1), date(2019, 12, 31));
+    let statement = client().mg_rs(&request).await.unwrap();
+    assert!(!statement.general.is_empty());
+    assert!(!statement.companies.is_empty());
+}
+
+#[tokio::test]
+#[ignore = "calls the live OpenDART API"]
 async fn unregistered_key() {
     let client = Client::new("0".repeat(40));
     let err = client.company("00126380").await.unwrap_err();
