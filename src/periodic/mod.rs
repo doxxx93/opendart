@@ -26,9 +26,9 @@
 //! | `tesstkAcqsDspsSttus.json` | [`Client::tesstk_acqs_dsps_sttus`] | [`TreasuryStock`] | [자기주식 취득 및 처분 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019006) |
 //! | `hyslrSttus.json` | [`Client::hyslr_sttus`] | [`LargestShareholder`] | [최대주주 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019007) |
 //! | `hyslrChgSttus.json` | [`Client::hyslr_chg_sttus`] | [`LargestShareholderChange`] | [최대주주 변동현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019008) |
-//! | `mrhlSttus.json` | [`Client::mrhl_sttus`] | [`MinorityShareholders`] | [소액주주 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019009) |
+//! | `mrhlSttus.json` | [`Client::mrhl_sttus`] | [`MinorityShareholding`] | [소액주주 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019009) |
 //! | `exctvSttus.json` | [`Client::exctv_sttus`] | [`Executive`] | [임원 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019010) |
-//! | `empSttus.json` | [`Client::emp_sttus`] | [`Employees`] | [직원 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019011) |
+//! | `empSttus.json` | [`Client::emp_sttus`] | [`EmployeeCount`] | [직원 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019011) |
 //! | `hmvAuditIndvdlBySttus.json` | [`Client::hmv_audit_indvdl_by_sttus`] | [`IndividualPay`] | [이사·감사의 개인별 보수현황(5억원 이상)](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019012) |
 //! | `hmvAuditAllSttus.json` | [`Client::hmv_audit_all_sttus`] | [`DirectorPayTotal`] | [이사·감사 전체의 보수현황(보수지급금액 - 이사·감사 전체)](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019013) |
 //! | `indvdlByPay.json` | [`Client::indvdl_by_pay`] | [`IndividualPay`] | [개인별 보수지급 금액(5억이상 상위5인)](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2019014) |
@@ -43,7 +43,7 @@
 //! | `accnutAdtorNmNdAdtOpinion.json` | [`Client::accnut_adtor_nm_nd_adt_opinion`] | [`AuditOpinion`] | [회계감사인의 명칭 및 감사의견](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020009) |
 //! | `adtServcCnclsSttus.json` | [`Client::adt_servc_cncls_sttus`] | [`AuditContract`] | [감사용역체결현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020010) |
 //! | `accnutAdtorNonAdtServcCnclsSttus.json` | [`Client::accnut_adtor_non_adt_servc_cncls_sttus`] | [`NonAuditContract`] | [회계감사인과의 비감사용역 계약체결 현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020011) |
-//! | `outcmpnyDrctrNdChangeSttus.json` | [`Client::outcmpny_drctr_nd_change_sttus`] | [`OutsideDirectors`] | [독립(사외)이사 및 그 변동현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020012) |
+//! | `outcmpnyDrctrNdChangeSttus.json` | [`Client::outcmpny_drctr_nd_change_sttus`] | [`OutsideDirectorCount`] | [독립(사외)이사 및 그 변동현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020012) |
 //! | `unrstExctvMendngSttus.json` | [`Client::unrst_exctv_mendng_sttus`] | [`UnregisteredExecutivePay`] | [미등기임원 보수현황](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020013) |
 //! | `drctrAdtAllMendngSttusGmtsckConfmAmount.json` | [`Client::drctr_adt_all_mendng_sttus_gmtsck_confm_amount`] | [`ApprovedDirectorPay`] | [이사·감사 전체의 보수현황(주주총회 승인금액)](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020014) |
 //! | `drctrAdtAllMendngSttusMendngPymntamtTyCl.json` | [`Client::drctr_adt_all_mendng_sttus_mendng_pymntamt_ty_cl`] | [`DirectorPayByType`] | [이사·감사 전체의 보수현황(보수지급금액 - 유형별)](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS002&apiId=2020015) |
@@ -122,7 +122,7 @@ pub use cprnd_nrdmp_blce::CorporateBondBalance;
 pub use det_scrits_isu_acmslt::DebtIssuance;
 pub use drctr_adt_all_mendng_sttus_gmtsck_confm_amount::ApprovedDirectorPay;
 pub use drctr_adt_all_mendng_sttus_mendng_pymntamt_ty_cl::DirectorPayByType;
-pub use emp_sttus::Employees;
+pub use emp_sttus::EmployeeCount;
 pub use entrprs_bil_scrits_nrdmp_blce::CommercialPaperBalance;
 pub use exctv_sttus::Executive;
 pub use hmv_audit_all_sttus::DirectorPayTotal;
@@ -130,10 +130,10 @@ pub use hmv_audit_indvdl_by_sttus::IndividualPay;
 pub use hyslr_chg_sttus::LargestShareholderChange;
 pub use hyslr_sttus::LargestShareholder;
 pub use irds_sttus::CapitalChange;
-pub use mrhl_sttus::MinorityShareholders;
+pub use mrhl_sttus::MinorityShareholding;
 pub use new_capl_scrits_nrdmp_blce::HybridSecuritiesBalance;
 pub use otr_cpr_invstmnt_sttus::Investment;
-pub use outcmpny_drctr_nd_change_sttus::OutsideDirectors;
+pub use outcmpny_drctr_nd_change_sttus::OutsideDirectorCount;
 pub use pay_v2::{PayRecipient, PayReport, StockBasedPay};
 pub use prvsrp_cptal_use_dtls::PrivatePlacementFundUse;
 pub use pssrp_cptal_use_dtls::PublicOfferingFundUse;

@@ -120,9 +120,13 @@ async fn treasury_stock_decisions() {
 async fn merger_registration() {
     // The example in the guide.
     let request = DateRangeRequest::new("00109718", date(2019, 1, 1), date(2019, 12, 31));
-    let statement = client().mg_rs(&request).await.unwrap();
-    assert!(!statement.general.is_empty());
-    assert!(!statement.companies.is_empty());
+    let statements = client().mg_rs(&request).await.unwrap();
+    assert!(!statements.is_empty());
+    assert!(
+        statements
+            .iter()
+            .all(|s| !s.general.is_empty() && !s.companies.is_empty())
+    );
 }
 
 #[tokio::test]

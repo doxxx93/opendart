@@ -175,6 +175,13 @@ mod tests {
     }
 
     #[test]
+    fn requests_match_the_guide() {
+        let request = ReportRequest::new("00126380", 2026, crate::ReportCode::HalfYear);
+        crate::guide_check::assert_documented(INDIVIDUAL, &request.query());
+        crate::guide_check::assert_documented(TOP_FIVE, &request.query());
+    }
+
+    #[test]
     fn no_data_is_none() {
         let body = include_bytes!("../../tests/fixtures/list/no_data.json");
         assert_eq!(parse(TOP_FIVE, body).unwrap(), None);

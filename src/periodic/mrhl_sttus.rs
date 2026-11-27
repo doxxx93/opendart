@@ -10,7 +10,7 @@ const ENDPOINT: &str = "mrhlSttus.json";
 /// One row of 소액주주 현황: minority shareholders.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]
-pub struct MinorityShareholders {
+pub struct MinorityShareholding {
     /// 접수번호: the 14-digit receipt number of the report.
     pub rcept_no: String,
     /// 법인구분: the market.
@@ -53,7 +53,7 @@ impl Client {
     pub async fn mrhl_sttus(
         &self,
         request: &ReportRequest,
-    ) -> Result<Vec<MinorityShareholders>, Error> {
+    ) -> Result<Vec<MinorityShareholding>, Error> {
         self.report_rows(ENDPOINT, request).await
     }
 }
@@ -71,7 +71,7 @@ mod tests {
     #[test]
     fn decodes_fixture() {
         let body = include_bytes!("../../tests/fixtures/periodic/mrhlSttus.json");
-        let rows: Vec<MinorityShareholders> = decode::rows(ENDPOINT, body).unwrap();
+        let rows: Vec<MinorityShareholding> = decode::rows(ENDPOINT, body).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rcept_no, "20260310002820");
         assert_eq!(

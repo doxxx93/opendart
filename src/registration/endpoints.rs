@@ -12,64 +12,77 @@ const DV_RS: &str = "dvRs.json";
 
 impl Client {
     /// 지분증권 (`estkRs.json`): equity securities registration statements filed in
-    /// the date range.
+    /// the date range, one per
+    /// statement.
     ///
-    /// Returns empty groups when there are none
+    /// Returns an empty list when there are none
     /// ([`Status::NoData`](crate::Status::NoData)).
-    pub async fn estk_rs(&self, request: &DateRangeRequest) -> Result<EquityRegistration, Error> {
+    pub async fn estk_rs(
+        &self,
+        request: &DateRangeRequest,
+    ) -> Result<Vec<EquityRegistration>, Error> {
         self.registration(ESTK_RS, request).await
     }
 
     /// 채무증권 (`bdRs.json`): debt securities registration statements filed in the
-    /// date range.
+    /// date range, one per
+    /// statement.
     ///
-    /// Returns empty groups when there are none
+    /// Returns an empty list when there are none
     /// ([`Status::NoData`](crate::Status::NoData)).
-    pub async fn bd_rs(&self, request: &DateRangeRequest) -> Result<DebtRegistration, Error> {
+    pub async fn bd_rs(&self, request: &DateRangeRequest) -> Result<Vec<DebtRegistration>, Error> {
         self.registration(BD_RS, request).await
     }
 
     /// 증권예탁증권 (`stkdpRs.json`): depositary receipt registration statements
-    /// filed in the date range.
+    /// filed in the date range, one per
+    /// statement.
     ///
-    /// Returns empty groups when there are none
+    /// Returns an empty list when there are none
     /// ([`Status::NoData`](crate::Status::NoData)).
-    pub async fn stkdp_rs(&self, request: &DateRangeRequest) -> Result<EquityRegistration, Error> {
+    pub async fn stkdp_rs(
+        &self,
+        request: &DateRangeRequest,
+    ) -> Result<Vec<EquityRegistration>, Error> {
         self.registration(STKDP_RS, request).await
     }
 
     /// 합병 (`mgRs.json`): merger registration statements filed in the date
-    /// range.
+    /// range, one per
+    /// statement.
     ///
-    /// Returns empty groups when there are none
+    /// Returns an empty list when there are none
     /// ([`Status::NoData`](crate::Status::NoData)).
     pub async fn mg_rs(
         &self,
         request: &DateRangeRequest,
-    ) -> Result<RestructuringRegistration, Error> {
+    ) -> Result<Vec<RestructuringRegistration>, Error> {
         self.registration(MG_RS, request).await
     }
 
     /// 주식의포괄적교환·이전 (`extrRs.json`): share exchange and transfer registration
-    /// statements filed in the date range.
+    /// statements filed in the date range, one per
+    /// statement.
     ///
-    /// Returns empty groups when there are none
+    /// Returns an empty list when there are none
     /// ([`Status::NoData`](crate::Status::NoData)).
     pub async fn extr_rs(
         &self,
         request: &DateRangeRequest,
-    ) -> Result<RestructuringRegistration, Error> {
+    ) -> Result<Vec<RestructuringRegistration>, Error> {
         self.registration(EXTR_RS, request).await
     }
 
-    /// 분할 (`dvRs.json`): split registration statements filed in the date range.
+    /// 분할 (`dvRs.json`): split registration statements filed in the date range,
+    /// one per
+    /// statement.
     ///
-    /// Returns empty groups when there are none
+    /// Returns an empty list when there are none
     /// ([`Status::NoData`](crate::Status::NoData)).
     pub async fn dv_rs(
         &self,
         request: &DateRangeRequest,
-    ) -> Result<RestructuringRegistration, Error> {
+    ) -> Result<Vec<RestructuringRegistration>, Error> {
         self.registration(DV_RS, request).await
     }
 }
@@ -82,67 +95,79 @@ mod tests {
     #[test]
     fn decodes_estk_rs() {
         let body = include_bytes!("../../tests/fixtures/registration/estkRs.json");
-        let statement: EquityRegistration = parse(ESTK_RS, body).unwrap();
-        assert_eq!(statement.general.len(), 1);
-        assert_eq!(statement.securities.len(), 1);
-        assert_eq!(statement.underwriters.len(), 1);
-        assert_eq!(statement.fund_uses.len(), 2);
-        assert_eq!(statement.sellers.len(), 1);
-        assert_eq!(statement.put_back_rights.len(), 1);
+        let statements: Vec<EquityRegistration> = parse(ESTK_RS, body).unwrap();
+        assert_eq!(statements.len(), 1);
+        assert_eq!(statements[0].rcept_no, "20190401004959");
+        assert_eq!(statements[0].general.len(), 1);
+        assert_eq!(statements[0].securities.len(), 1);
+        assert_eq!(statements[0].underwriters.len(), 1);
+        assert_eq!(statements[0].fund_uses.len(), 2);
+        assert_eq!(statements[0].sellers.len(), 1);
+        assert_eq!(statements[0].put_back_rights.len(), 1);
         crate::guide_check::assert_documented(ESTK_RS, &crate::date_range::example().query());
     }
 
     #[test]
     fn decodes_bd_rs() {
         let body = include_bytes!("../../tests/fixtures/registration/bdRs.json");
-        let statement: DebtRegistration = parse(BD_RS, body).unwrap();
-        assert_eq!(statement.general.len(), 2);
-        assert_eq!(statement.underwriters.len(), 2);
-        assert_eq!(statement.fund_uses.len(), 2);
-        assert_eq!(statement.sellers.len(), 2);
+        let statements: Vec<DebtRegistration> = parse(BD_RS, body).unwrap();
+        assert_eq!(statements.len(), 2);
+        assert_eq!(statements[0].rcept_no, "20190214000140");
+        assert_eq!(statements[0].general.len(), 1);
+        assert_eq!(statements[0].underwriters.len(), 2);
+        assert_eq!(statements[0].fund_uses.len(), 2);
+        assert_eq!(statements[0].sellers.len(), 2);
         crate::guide_check::assert_documented(BD_RS, &crate::date_range::example().query());
     }
 
     #[test]
     fn decodes_stkdp_rs() {
         let body = include_bytes!("../../tests/fixtures/registration/stkdpRs.json");
-        let statement: EquityRegistration = parse(STKDP_RS, body).unwrap();
-        assert_eq!(statement.general.len(), 1);
-        assert_eq!(statement.securities.len(), 1);
-        assert_eq!(statement.underwriters.len(), 2);
-        assert_eq!(statement.fund_uses.len(), 2);
-        assert_eq!(statement.sellers.len(), 1);
-        assert_eq!(statement.put_back_rights.len(), 0);
+        let statements: Vec<EquityRegistration> = parse(STKDP_RS, body).unwrap();
+        assert_eq!(statements.len(), 1);
+        assert_eq!(statements[0].rcept_no, "20190411002251");
+        assert_eq!(statements[0].general.len(), 1);
+        assert_eq!(statements[0].securities.len(), 1);
+        assert_eq!(statements[0].underwriters.len(), 2);
+        assert_eq!(statements[0].fund_uses.len(), 2);
+        assert_eq!(statements[0].sellers.len(), 1);
+        assert_eq!(statements[0].put_back_rights.len(), 0);
         crate::guide_check::assert_documented(STKDP_RS, &crate::date_range::example().query());
     }
 
     #[test]
     fn decodes_mg_rs() {
         let body = include_bytes!("../../tests/fixtures/registration/mgRs.json");
-        let statement: RestructuringRegistration = parse(MG_RS, body).unwrap();
-        assert_eq!(statement.general.len(), 1);
-        assert_eq!(statement.securities.len(), 1);
-        assert_eq!(statement.companies.len(), 2);
+        let statements: Vec<RestructuringRegistration> = parse(MG_RS, body).unwrap();
+        assert_eq!(statements.len(), 1);
+        assert_eq!(statements[0].rcept_no, "20190402002153");
+        assert_eq!(statements[0].general.len(), 1);
+        assert_eq!(statements[0].securities.len(), 1);
+        assert_eq!(statements[0].companies.len(), 2);
         crate::guide_check::assert_documented(MG_RS, &crate::date_range::example().query());
     }
 
     #[test]
     fn decodes_extr_rs() {
         let body = include_bytes!("../../tests/fixtures/registration/extrRs.json");
-        let statement: RestructuringRegistration = parse(EXTR_RS, body).unwrap();
-        assert_eq!(statement.general.len(), 1);
-        assert_eq!(statement.securities.len(), 1);
-        assert_eq!(statement.companies.len(), 2);
+        let statements: Vec<RestructuringRegistration> = parse(EXTR_RS, body).unwrap();
+        assert_eq!(statements.len(), 1);
+        assert_eq!(statements[0].rcept_no, "20190417000436");
+        assert_eq!(statements[0].general.len(), 1);
+        assert_eq!(statements[0].securities.len(), 1);
+        assert_eq!(statements[0].companies.len(), 2);
         crate::guide_check::assert_documented(EXTR_RS, &crate::date_range::example().query());
     }
 
     #[test]
     fn decodes_dv_rs() {
         let body = include_bytes!("../../tests/fixtures/registration/dvRs.json");
-        let statement: RestructuringRegistration = parse(DV_RS, body).unwrap();
-        assert_eq!(statement.general.len(), 1);
-        assert_eq!(statement.securities.len(), 1);
-        assert_eq!(statement.companies.len(), 2);
+        let statements: Vec<RestructuringRegistration> = parse(DV_RS, body).unwrap();
+        assert_eq!(statements.len(), 1);
+        assert_eq!(statements[0].rcept_no, "20191015000270");
+        assert_eq!(statements[0].general.len(), 1);
+        assert_eq!(statements[0].securities.len(), 1);
+        assert_eq!(statements[0].companies.len(), 2);
         crate::guide_check::assert_documented(DV_RS, &crate::date_range::example().query());
     }
 }

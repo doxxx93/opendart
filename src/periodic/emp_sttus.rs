@@ -7,10 +7,10 @@ use crate::{Client, CorpClass, Error, Number, ReportRequest, decode};
 
 const ENDPOINT: &str = "empSttus.json";
 
-/// One row of 직원 현황: employees.
+/// One row of 직원 현황: employees by division and sex.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]
-pub struct Employees {
+pub struct EmployeeCount {
     /// 접수번호: the 14-digit receipt number of the report.
     pub rcept_no: String,
     /// 법인구분: the market.
@@ -26,14 +26,14 @@ pub struct Employees {
     #[serde(default)]
     pub sexdstn: String,
     /// 개정 전 직원 수 정규직
-    #[serde(default)]
-    pub reform_bfe_emp_co_rgllbr: String,
+    #[serde(default, deserialize_with = "decode::number")]
+    pub reform_bfe_emp_co_rgllbr: Option<Number>,
     /// 개정 전 직원 수 계약직
-    #[serde(default)]
-    pub reform_bfe_emp_co_cnttk: String,
+    #[serde(default, deserialize_with = "decode::number")]
+    pub reform_bfe_emp_co_cnttk: Option<Number>,
     /// 개정 전 직원 수 기타
-    #[serde(default)]
-    pub reform_bfe_emp_co_etc: String,
+    #[serde(default, deserialize_with = "decode::number")]
+    pub reform_bfe_emp_co_etc: Option<Number>,
     /// 정규직 수
     #[serde(default, deserialize_with = "decode::number")]
     pub rgllbr_co: Option<Number>,
@@ -67,11 +67,11 @@ pub struct Employees {
 }
 
 impl Client {
-    /// 직원 현황 (`empSttus.json`): employees.
+    /// 직원 현황 (`empSttus.json`): employees by division and sex.
     ///
     /// Returns an empty list when the report has no such section
     /// ([`Status::NoData`](crate::Status::NoData)).
-    pub async fn emp_sttus(&self, request: &ReportRequest) -> Result<Vec<Employees>, Error> {
+    pub async fn emp_sttus(&self, request: &ReportRequest) -> Result<Vec<EmployeeCount>, Error> {
         self.report_rows(ENDPOINT, request).await
     }
 }
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn decodes_fixture() {
         let body = include_bytes!("../../tests/fixtures/periodic/empSttus.json");
-        let rows: Vec<Employees> = decode::rows(ENDPOINT, body).unwrap();
+        let rows: Vec<EmployeeCount> = decode::rows(ENDPOINT, body).unwrap();
         assert_eq!(rows.len(), 4);
         assert_eq!(rows[0].rcept_no, "20260310002820");
         assert_eq!(

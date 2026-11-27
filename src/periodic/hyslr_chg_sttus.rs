@@ -70,6 +70,10 @@ mod tests {
         let body = include_bytes!("../../tests/fixtures/periodic/hyslrChgSttus.json");
         let rows: Vec<LargestShareholderChange> = decode::rows(ENDPOINT, body).unwrap();
         assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].rcept_no, "20260310002820");
+        assert_eq!(rows[0].rcept_no, "20191227000084");
+        assert_eq!(
+            rows[0].posesn_stock_co.as_ref().map(Number::as_str),
+            Some("3,279,279")
+        );
     }
 }
