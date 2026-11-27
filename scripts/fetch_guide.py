@@ -102,7 +102,18 @@ def page_text(page):
     parser = PageText()
     parser.feed(page)
     parser.close()
-    return parser.text()
+    return drop_view_counts(parser.text())
+
+
+def drop_view_counts(text):
+    """Removes the 조회수 column of list pages (the number right after a
+    YYYY-MM-DD line), which changes with every visit."""
+    lines = text.split("\n")
+    kept = [
+        line for i, line in enumerate(lines)
+        if not (i and re.fullmatch(r"\d{4}-\d{2}-\d{2}", lines[i - 1]) and re.fullmatch(r"[\d,]+", line))
+    ]
+    return "\n".join(kept)
 
 
 def digest(text):
