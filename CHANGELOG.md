@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-27
+
 ### Added
 
 - `Client` on reqwest (by default a 10 s connect and 30 s read timeout), with `rustls` (default), `rustls-no-provider` and `native-tls` features and `Client::from_reqwest` for a caller-built `reqwest::Client`.
@@ -18,3 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 증권신고서 주요정보 (`DS006`) endpoints in `opendart::registration`: all 6. They take a `DateRangeRequest` and return one value per statement (`EquityRegistration`, `DebtRegistration`, `RestructuringRegistration`) with a `Vec` for each group of the reply.
 - `Number` for amounts, counts and ratios: the text OpenDART sent, with `Number::parse` into any `FromStr` type after removing thousands separators and a trailing `%`.
 - `Error` and `Status`, mapping OpenDART status codes; `Error::is_rate_limited` for status `020`. Every `Error` variant names the endpoint that failed (`Error::endpoint`).
+
+[Unreleased]: https://github.com/doxxx93/opendart/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/doxxx93/opendart/releases/tag/v0.1.0

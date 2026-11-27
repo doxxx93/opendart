@@ -7,8 +7,8 @@ OpenDART(금융감독원 전자공시) API를 위한 Rust 클라이언트입니�
 
 ## Status
 
-Early development, not published yet. All 85 endpoints of the guide are in;
-0.1.0 is next.
+All 85 endpoints of the OpenDART 개발가이드 are implemented. Before 1.0 a
+minor version (0.x) may change the API; see the [changelog](CHANGELOG.md).
 
 ## Scope
 
