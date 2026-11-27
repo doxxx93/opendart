@@ -5,13 +5,19 @@ Writes one file per endpoint plus an index to the output directory (default
 kept out of the repository), and the intro, terms, notice, FAQ and API
 change-notice pages under `site/`.
 
-Usage: python3 -I scripts/fetch_guide.py [out_dir]
+With `--snapshot`, also writes a JSON snapshot of the interface (endpoints,
+request and response keys with their short labels, status codes, board
+titles) with prose replaced by hashes. CI commits that file and diffs it to
+detect guide changes.
+
+Usage: python3 -I scripts/fetch_guide.py [out_dir] [--snapshot FILE] [--snapshot-only]
 """
 
+import argparse
+import hashlib
 import html
 import json
 import re
-import sys
 import time
 import urllib.parse
 import urllib.request
@@ -99,15 +105,39 @@ def page_text(page):
     return parser.text()
 
 
+def digest(text):
+    """Short hash for prose, so the snapshot detects changes without
+    copying the FSS's text."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:12]
+
+
+def article_head(text):
+    """(date, title) of an article: the title is the line before the first
+    YYYY-MM-DD line."""
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", line) and i:
+            return line, lines[i - 1]
+    return "", ""
+
+
 def fetch_site(out):
-    site = out / "site"
-    site.mkdir(exist_ok=True)
+    """Saves the site pages and boards under `out/site` (when `out` is set)
+    and returns their snapshot entries."""
+    site = out / "site" if out else None
+    if site:
+        site.mkdir(exist_ok=True)
+    snapshot = {"pages": {}, "boards": {}}
     for name, path in PAGES.items():
-        (site / f"{name}.md").write_text(f"Source: {BASE}{path}\n\n{page_text(fetch(path))}\n", encoding="utf-8")
+        text = page_text(fetch(path))
+        snapshot["pages"][name] = digest(text)
+        if site:
+            (site / f"{name}.md").write_text(f"Source: {BASE}{path}\n\n{text}\n", encoding="utf-8")
         print("page", name)
     for name, bbs_id in BOARDS.items():
-        board = site / name
-        board.mkdir(exist_ok=True)
+        board = site / name if site else None
+        if board:
+            board.mkdir(exist_ok=True)
         seen, page_index = [], 1
         while True:
             listing = fetch(f"/cop/bbs/selectArticleList.do?bbsId={bbs_id}&pageIndex={page_index}")
@@ -116,10 +146,20 @@ def fetch_site(out):
                 break
             seen += ids
             page_index += 1
+        entries = []
         for ntt_id in seen:
             text = page_text(fetch("/cop/bbs/selectArticleDetail.do", {"nttId": ntt_id, "bbsId": bbs_id}))
-            (board / f"{ntt_id}.md").write_text(f"Source: {BASE}/cop/bbs/selectArticleDetail.do (bbsId={bbs_id}, nttId={ntt_id})\n\n{text}\n", encoding="utf-8")
+            date, title = article_head(text)
+            # Maintenance notices come every month or two and say nothing
+            # about the API itself.
+            if name == "notice" and "시스템 점검" in title:
+                continue
+            entries.append({"ntt_id": ntt_id, "date": date, "title": title, "body": digest(text)})
+            if board:
+                (board / f"{ntt_id}.md").write_text(f"Source: {BASE}/cop/bbs/selectArticleDetail.do (bbsId={bbs_id}, nttId={ntt_id})\n\n{text}\n", encoding="utf-8")
+        snapshot["boards"][name] = sorted(entries, key=lambda e: int(e["ntt_id"]))
         print("board", name, len(seen), "articles")
+    return snapshot
 
 
 def clean(text):
@@ -234,8 +274,37 @@ def parse_index(group_html, group):
             continue
         cells = [clean(re.sub(r"<[^>]+>", "", c)) for c in re.findall(r"<td[^>]*>(.*?)</td>", tr, flags=re.S)]
         rows.append({"api_id": m.group(1), "name": cells[1], "summary": cells[2]})
-    title = re.search(rf'apiGrpCd={group}"[^>]*>([^<]+)</a>', group_html)
-    return (clean(title.group(1)) if title else group), rows
+    titles = [clean(t) for t in re.findall(rf'apiGrpCd={group}"[^>]*>([^<]+)</a>', group_html)]
+    titles = [t for t in titles if t != "개발가이드"]
+    return (titles[0] if titles else group), rows
+
+
+def api_snapshot(sections):
+    """The interface facts of one guide page: endpoints, request and
+    response keys with their short labels, and hashes of the prose."""
+    entry = {"endpoints": [], "request": [], "response": [], "messages": [], "other": {}}
+    for section in sections:
+        rows = [r for table in section["tables"] for r in table[1:]]  # skip header rows
+        title = section["title"]
+        if title == "기본 정보":
+            entry["endpoints"] = [{"method": r[0], "url": r[1], "format": r[3]} for r in rows if len(r) >= 4]
+        elif title == "요청 인자":
+            entry["request"] = [
+                {"key": r[0], "label": r[1], "type": r[2], "required": r[3], "desc": digest(r[4])}
+                for r in rows if len(r) >= 5
+            ]
+        elif title == "응답 결과":
+            entry["response"] = [
+                {"key": r[0], "label": r[1] if len(r) > 1 else "", "desc": digest(r[2] if len(r) > 2 else "")}
+                for r in rows
+            ]
+        elif title == "메시지 설명":
+            # This table has no header row.
+            all_rows = [r for table in section["tables"] for r in table]
+            entry["messages"] = sorted({m for r in all_rows for m in re.findall(r"- (\d{3}) :", " ".join(r))})
+        elif title != "OpenAPI 테스트":
+            entry["other"][title] = digest(json.dumps(section["tables"], ensure_ascii=False))
+    return entry
 
 
 def slug(text):
@@ -243,14 +312,21 @@ def slug(text):
 
 
 def main():
-    out = Path(sys.argv[1] if len(sys.argv) > 1 else "guide")
-    out.mkdir(parents=True, exist_ok=True)
-    index = []
+    args = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    args.add_argument("out", nargs="?", default="guide", help="directory for the Markdown copy")
+    args.add_argument("--snapshot", type=Path, help="also write the interface snapshot JSON here")
+    args.add_argument("--snapshot-only", action="store_true", help="write only the snapshot")
+    opts = args.parse_args()
+    out = None if opts.snapshot_only else Path(opts.out)
+    if out:
+        out.mkdir(parents=True, exist_ok=True)
+    index, apis_snapshot = [], []
     for group in GROUPS:
         group_html = fetch(f"/guide/main.do?apiGrpCd={group}")
         group_name, apis = parse_index(group_html, group)
-        group_dir = out / f"{group}-{slug(group_name)}"
-        group_dir.mkdir(exist_ok=True)
+        group_dir = out / f"{group}-{slug(group_name)}" if out else None
+        if group_dir:
+            group_dir.mkdir(exist_ok=True)
         for api in apis:
             page = fetch(f"/guide/detail.do?apiGrpCd={group}&apiId={api['api_id']}")
             parser = Sections()
@@ -258,6 +334,13 @@ def main():
             parser.close()
             sections = [s for s in parser.sections if s["tables"] or s["text"]]
             urls = sorted(set(re.findall(r"https://opendart\.fss\.or\.kr/api/[A-Za-z0-9]+\.(?:json|xml)", page)))
+            apis_snapshot.append({
+                "group": group, "group_name": group_name, "api_id": api["api_id"], "name": api["name"],
+                "summary": digest(api["summary"]), **api_snapshot(sections),
+            })
+            print(group, api["api_id"], api["name"], " ".join(u.rsplit("/", 1)[1] for u in urls))
+            if not out:
+                continue
             doc = [
                 f"# {api['name']} ({group} {api['api_id']})",
                 "",
@@ -276,15 +359,20 @@ def main():
             path.write_text("\n".join(doc) + "\n", encoding="utf-8")
             index.append({"group": group, "group_name": group_name, **api, "urls": urls,
                           "file": str(path.relative_to(out))})
-            print(group, api["api_id"], api["name"], " ".join(u.rsplit("/", 1)[1] for u in urls))
-    (out / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
-    lines = ["# OpenDART 개발가이드 index", "", "| Group | apiId | API | Endpoints | File |", "|---|---|---|---|---|"]
-    for e in index:
-        eps = ", ".join(u.rsplit("/", 1)[1] for u in e["urls"])
-        lines.append(f"| {e['group']} {e['group_name']} | {e['api_id']} | {e['name']} | {eps} | [{e['file']}]({e['file']}) |")
-    (out / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(len(index), "APIs")
-    fetch_site(out)
+    if out:
+        (out / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
+        lines = ["# OpenDART 개발가이드 index", "", "| Group | apiId | API | Endpoints | File |", "|---|---|---|---|---|"]
+        for e in index:
+            eps = ", ".join(u.rsplit("/", 1)[1] for u in e["urls"])
+            lines.append(f"| {e['group']} {e['group_name']} | {e['api_id']} | {e['name']} | {eps} | [{e['file']}]({e['file']}) |")
+        (out / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(len(apis_snapshot), "APIs")
+    site = fetch_site(out)
+    if opts.snapshot:
+        snapshot = {"apis": apis_snapshot, **site}
+        opts.snapshot.parent.mkdir(parents=True, exist_ok=True)
+        opts.snapshot.write_text(json.dumps(snapshot, ensure_ascii=False, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+        print("snapshot", opts.snapshot)
 
 
 if __name__ == "__main__":
