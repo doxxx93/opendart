@@ -48,7 +48,8 @@ pub struct StatementLine {
     /// 재무제표명
     #[serde(default)]
     pub sj_nm: String,
-    /// 계정ID: the XBRL element, e.g. `ifrs-full_Assets`.
+    /// 계정ID: the XBRL element, e.g. `ifrs-full_Assets`, or
+    /// `-표준계정코드 미사용-` for an account the company defined itself.
     #[serde(default)]
     pub account_id: String,
     /// 계정명
@@ -61,7 +62,9 @@ pub struct StatementLine {
     /// 당기명
     #[serde(default)]
     pub thstrm_nm: String,
-    /// 당기금액
+    /// 당기금액: in the income statements of quarterly and half-year
+    /// reports, the amount for the three months of the quarter; the
+    /// year-to-date amount is `thstrm_add_amount`.
     #[serde(default, deserialize_with = "decode::number")]
     pub thstrm_amount: Option<Number>,
     /// 당기누적금액
@@ -101,8 +104,9 @@ impl Client {
     /// balance sheet, income statements, cash flow statement and statement
     /// of changes in equity in one company's report, about 200 to 300 rows.
     ///
-    /// Returns an empty list when the report has no such statements
-    /// ([`Status::NoData`](crate::Status::NoData)), for example
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data). That includes
     /// [`Consolidation::Consolidated`] for a company without subsidiaries.
     pub async fn fnltt_singl_acnt_all(
         &self,

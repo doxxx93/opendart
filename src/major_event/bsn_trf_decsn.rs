@@ -136,8 +136,9 @@ impl Client {
     /// 영업양도 결정 (`bsnTrfDecsn.json`): decisions to transfer a business filed in
     /// the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn bsn_trf_decsn(
         &self,
         request: &DateRangeRequest,

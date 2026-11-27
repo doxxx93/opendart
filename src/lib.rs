@@ -36,14 +36,35 @@
 //!   sent, which the caller parses into the type it wants (`i64`, `f64`, a
 //!   decimal type).
 //! - Codes in replies (`reprt_code`, `fs_div`, `sj_div`, `idx_cl_code`) are
-//!   strings as sent; the request parameters that take them are enums such
-//!   as [`ReportCode`].
+//!   strings as sent. Request parameters with a short fixed list of values
+//!   are enums such as [`ReportCode`]; the detailed disclosure type
+//!   (`pblntf_detail_ty`) and the taxonomy form (`sj_div`) are strings.
 //! - Blank stock codes and similar optional values become `None`; other
 //!   text passes through unchanged.
 //!
-//! Response types implement [`serde::Deserialize`] for OpenDART's wire
-//! format, so serde is a public dependency. OpenDART reports errors with a
+//! Row types implement [`serde::Deserialize`] for OpenDART's wire format,
+//! so serde is a public dependency; the types this crate assembles itself
+//! ([`DocumentFile`](disclosure::DocumentFile) and the
+//! [`registration`] statements) do not. OpenDART reports errors with a
 //! `status` code inside the body, which surfaces as [`Error::Api`].
+//!
+//! # No data
+//!
+//! OpenDART answers status `013` (조회된 데이타가 없습니다) whenever it has
+//! nothing for a request, and does not say why. Endpoints that return a
+//! list turn it into an empty list (and [`Client::list`] into an empty
+//! page), the two `...V2` pay endpoints into `None`, and lookups of one
+//! thing ([`Client::company`], [`Client::document`], [`Client::fnltt_xbrl`])
+//! into [`Error::Api`] with [`Status::NoData`].
+//!
+//! An empty answer does not always mean the report lacks the data. According
+//! to the OpenDART FAQ, filings and their financial data appear about 15
+//! minutes after submission and, on filing deadlines, by the next business
+//! day; companies that need not file XBRL statements (such as unlisted
+//! companies on K-GAAP) have no financial data; and simplified quarterly
+//! reports may leave items out. A wrong `corp_code` or a fiscal year not
+//! filed yet look the same, so an empty answer right after a filing is
+//! worth retrying later.
 //!
 //! # Request limits
 //!
@@ -59,17 +80,34 @@
 //!   time (for example `document.xml` and `corpCode.xml`); the notices are
 //!   on the OpenDART 공지사항 board.
 //!
+//! # Runtime
+//!
+//! The client runs on reqwest, which needs a [Tokio] 1.x runtime: call it
+//! from `#[tokio::main]` or another Tokio context (`cargo add tokio
+//! --features macros,rt-multi-thread`).
+//!
 //! # Features
 //!
 //! - `rustls` (default): TLS through rustls with the aws-lc-rs crypto provider.
 //! - `rustls-no-provider`: rustls without a crypto provider, for callers who
 //!   install their own (such as ring) with `rustls::crypto::CryptoProvider`.
-//! - `native-tls`: TLS through the platform library.
+//! - `native-tls`: TLS through the platform library. Turn the default off
+//!   with it (`default-features = false, features = ["native-tls"]`), or
+//!   rustls and aws-lc-rs are still compiled.
 //!
 //! With none of them, pass a [`reqwest::Client`] that has TLS to
 //! [`Client::from_reqwest`].
 //!
+//! # Minimum supported Rust version
+//!
+//! Rust 1.88, when dependencies are resolved for it. Cargo's MSRV-aware
+//! resolver does this by default in edition 2024 packages (`resolver =
+//! "3"`). Elsewhere Cargo may pick dependency releases that need a newer
+//! Rust, such as zip 9.8, which needs 1.89; `cargo update -p zip --precise
+//! 9.7.3` fixes that.
+//!
 //! [OpenDART]: https://opendart.fss.or.kr
+//! [Tokio]: https://tokio.rs
 //! [개발가이드]: https://opendart.fss.or.kr/guide/main.do
 
 mod client;

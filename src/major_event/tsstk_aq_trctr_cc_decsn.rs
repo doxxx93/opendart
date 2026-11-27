@@ -46,25 +46,25 @@ pub struct TreasuryTrustTermination {
     /// 해지 전 자기주식 보유현황(배당가능범위 내 취득(주)(보통주식))
     #[serde(default, deserialize_with = "decode::number")]
     pub aq_wtn_div_ostk: Option<Number>,
-    /// 해지 전 자기주식 보유현황(배당가능범위 내 취득(주)(비율(%)))
+    /// 해지 전 자기주식 보유현황(배당가능범위 내 취득(주)(비율(%)))(보통주식)
     #[serde(default, deserialize_with = "decode::number")]
     pub aq_wtn_div_ostk_rt: Option<Number>,
     /// 해지 전 자기주식 보유현황(배당가능범위 내 취득(주)(기타주식))
     #[serde(default, deserialize_with = "decode::number")]
     pub aq_wtn_div_estk: Option<Number>,
-    /// 해지 전 자기주식 보유현황(배당가능범위 내 취득(주)(비율(%)))
+    /// 해지 전 자기주식 보유현황(배당가능범위 내 취득(주)(비율(%)))(기타주식)
     #[serde(default, deserialize_with = "decode::number")]
     pub aq_wtn_div_estk_rt: Option<Number>,
     /// 해지 전 자기주식 보유현황(기타취득(주)(보통주식))
     #[serde(default, deserialize_with = "decode::number")]
     pub eaq_ostk: Option<Number>,
-    /// 해지 전 자기주식 보유현황(기타취득(주)(비율(%)))
+    /// 해지 전 자기주식 보유현황(기타취득(주)(비율(%)))(보통주식)
     #[serde(default, deserialize_with = "decode::number")]
     pub eaq_ostk_rt: Option<Number>,
     /// 해지 전 자기주식 보유현황(기타취득(주)(기타주식))
     #[serde(default, deserialize_with = "decode::number")]
     pub eaq_estk: Option<Number>,
-    /// 해지 전 자기주식 보유현황(기타취득(주)(비율(%)))
+    /// 해지 전 자기주식 보유현황(기타취득(주)(비율(%)))(기타주식)
     #[serde(default, deserialize_with = "decode::number")]
     pub eaq_estk_rt: Option<Number>,
     /// 이사회결의일(결정일)
@@ -85,8 +85,9 @@ impl Client {
     /// 자기주식취득 신탁계약 해지 결정 (`tsstkAqTrctrCcDecsn.json`): decisions to end a trust
     /// contract for acquiring treasury stock filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn tsstk_aq_trctr_cc_decsn(
         &self,
         request: &DateRangeRequest,

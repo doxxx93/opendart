@@ -152,8 +152,9 @@ impl Client {
     /// 전환사채권 발행결정 (`cvbdIsDecsn.json`): decisions to issue convertible bonds
     /// filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn cvbd_is_decsn(
         &self,
         request: &DateRangeRequest,

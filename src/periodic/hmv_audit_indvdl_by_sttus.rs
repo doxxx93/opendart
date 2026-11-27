@@ -44,8 +44,12 @@ impl Client {
     /// 이사·감사의 개인별 보수현황(5억원 이상) (`hmvAuditIndvdlBySttus.json`): pay of each
     /// director and auditor paid 500 million won or more.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Covers reports filed until 2026-04 (the guide: "2026년 4월까지 제출된
+    /// 보고서해당"); later reports are in [`hmv_audit_indvdl_by_sttus_v2`](Client::hmv_audit_indvdl_by_sttus_v2).
+    ///
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn hmv_audit_indvdl_by_sttus(
         &self,
         request: &ReportRequest,

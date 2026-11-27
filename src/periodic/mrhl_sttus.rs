@@ -48,8 +48,9 @@ pub struct MinorityShareholding {
 impl Client {
     /// 소액주주 현황 (`mrhlSttus.json`): minority shareholders.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn mrhl_sttus(
         &self,
         request: &ReportRequest,

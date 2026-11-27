@@ -46,8 +46,9 @@ pub struct Dividend {
 impl Client {
     /// 배당에 관한 사항 (`alotMatter.json`): dividends.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn alot_matter(&self, request: &ReportRequest) -> Result<Vec<Dividend>, Error> {
         self.report_rows(ENDPOINT, request).await
     }

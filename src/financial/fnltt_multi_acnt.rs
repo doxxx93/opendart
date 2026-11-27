@@ -11,8 +11,9 @@ impl Client {
     /// companies at once. Tell the companies apart by
     /// [`Account::corp_code`].
     ///
-    /// Returns an empty list when none of the reports has financial
-    /// statements ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn fnltt_multi_acnt(
         &self,
         request: &MultiReportRequest,

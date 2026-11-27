@@ -47,8 +47,9 @@ impl Client {
     /// 회계감사인과의 비감사용역 계약체결 현황 (`accnutAdtorNonAdtServcCnclsSttus.json`):
     /// non-audit service contracts with the external auditor.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn accnut_adtor_non_adt_servc_cncls_sttus(
         &self,
         request: &ReportRequest,

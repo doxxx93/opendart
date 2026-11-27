@@ -160,8 +160,9 @@ impl Client {
     /// 회사분할 결정 (`cmpDvDecsn.json`): decisions to split the company filed in the
     /// date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn cmp_dv_decsn(
         &self,
         request: &DateRangeRequest,

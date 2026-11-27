@@ -75,8 +75,9 @@ impl Client {
     /// financial indicators (ratios) for one company's report. Data starts
     /// with the third quarter of 2023.
     ///
-    /// Returns an empty list when there are no indicators for the report
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn fnltt_singl_indx(
         &self,
         request: &ReportRequest,

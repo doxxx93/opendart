@@ -44,6 +44,14 @@ mod tests {
         );
     }
 
+    #[test]
+    fn unknown_receipt_number() {
+        let body = include_bytes!("../../tests/fixtures/financial/fnlttXbrl_not_found.xml");
+        let err = zip_files(ENDPOINT, body).unwrap_err();
+        assert_eq!(err.status(), Some(&crate::Status::NoData));
+        assert_eq!(err.endpoint(), ENDPOINT);
+    }
+
     /// The fixture keeps the real archive's entries, each cut to 256 bytes.
     #[test]
     fn reads_every_file() {

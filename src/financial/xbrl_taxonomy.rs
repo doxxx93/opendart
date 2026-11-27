@@ -51,7 +51,12 @@ impl Client {
     /// (단일 포괄손익계산서), `CF1` to `CF4` (현금흐름표) and `SCE1`, `SCE2`
     /// (자본변동표). Odd numbers are consolidated, even numbers separate; the
     /// [guide](https://opendart.fss.or.kr/guide/detail.do?apiGrpCd=DS003&apiId=2020001)
-    /// lists what else each number means.
+    /// lists what else each number means. The code is a string because the
+    /// forms are taxonomy data rather than an API option.
+    ///
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn xbrl_taxonomy(&self, sj_div: &str) -> Result<Vec<TaxonomyAccount>, Error> {
         self.rows(ENDPOINT, &query(sj_div)).await
     }

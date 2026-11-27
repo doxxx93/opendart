@@ -6,7 +6,7 @@ use crate::{Client, CorpClass, DateRangeRequest, Error};
 
 const ENDPOINT: &str = "lwstLg.json";
 
-/// One 소송 등의 제기 report: lawsuits filed, returned by [`Client::lwst_lg`].
+/// One 소송 등의 제기 report: lawsuits, returned by [`Client::lwst_lg`].
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[non_exhaustive]
 pub struct Lawsuit {
@@ -42,10 +42,11 @@ pub struct Lawsuit {
 }
 
 impl Client {
-    /// 소송 등의 제기 (`lwstLg.json`): lawsuits filed filed in the date range.
+    /// 소송 등의 제기 (`lwstLg.json`): lawsuits filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn lwst_lg(&self, request: &DateRangeRequest) -> Result<Vec<Lawsuit>, Error> {
         self.date_range_rows(ENDPOINT, request).await
     }

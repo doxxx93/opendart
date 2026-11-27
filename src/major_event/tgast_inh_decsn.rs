@@ -133,8 +133,9 @@ impl Client {
     /// 유형자산 양수 결정 (`tgastInhDecsn.json`): decisions to acquire tangible assets
     /// filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn tgast_inh_decsn(
         &self,
         request: &DateRangeRequest,

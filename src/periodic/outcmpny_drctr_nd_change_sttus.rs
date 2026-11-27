@@ -43,8 +43,9 @@ impl Client {
     /// 독립(사외)이사 및 그 변동현황 (`outcmpnyDrctrNdChangeSttus.json`): outside directors
     /// and their changes.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn outcmpny_drctr_nd_change_sttus(
         &self,
         request: &ReportRequest,

@@ -33,10 +33,11 @@ pub struct Client {
 
 impl Client {
     /// Creates a client with a default [`reqwest::Client`]: an
-    /// `opendart-rs/<version>` User-Agent, a 10 second connect timeout and
-    /// a 30 second read timeout. The read timeout fails a request when no
-    /// data arrives for 30 seconds; there is no limit on the whole request,
-    /// so large downloads over slow links still finish.
+    /// `opendart-rs/<version>` User-Agent, a 10 second connect timeout, a
+    /// 30 second read timeout and no `Referer` header. The read timeout
+    /// fails a request when no data arrives for 30 seconds; there is no
+    /// limit on the whole request, so large downloads over slow links still
+    /// finish.
     ///
     /// To change these, or to set a proxy, TLS options or a shared
     /// connection pool, use [`Client::from_reqwest`].
@@ -46,10 +47,7 @@ impl Client {
     /// Panics if the TLS backend cannot be initialized, like
     /// [`reqwest::Client::new`].
     pub fn new(api_key: impl Into<String>) -> Self {
-        let http = reqwest::Client::builder()
-            .user_agent(USER_AGENT)
-            .connect_timeout(CONNECT_TIMEOUT)
-            .read_timeout(READ_TIMEOUT)
+        let http = builder()
             .build()
             .expect("failed to build the reqwest client");
         Self::from_reqwest(http, api_key)
@@ -61,6 +59,11 @@ impl Client {
     /// [`reqwest::ClientBuilder::user_agent`]). OpenDART redirects requests
     /// without one to an error page, which fails as an [`Error::Http`]
     /// redirect error.
+    ///
+    /// Turn off the `Referer` header with
+    /// [`reqwest::ClientBuilder::referer`]`(false)`: the request URL holds
+    /// the API key, and reqwest sends it as the `Referer` when it follows a
+    /// redirect, also to another host.
     pub fn from_reqwest(http: reqwest::Client, api_key: impl Into<String>) -> Self {
         Client {
             http,
@@ -94,6 +97,17 @@ impl Client {
     }
 }
 
+/// The settings of [`Client::new`]. `referer(false)` because reqwest would
+/// otherwise send the request URL, key included, to wherever a redirect
+/// leads.
+fn builder() -> reqwest::ClientBuilder {
+    reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .connect_timeout(CONNECT_TIMEOUT)
+        .read_timeout(READ_TIMEOUT)
+        .referer(false)
+}
+
 impl fmt::Debug for Client {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Client")
@@ -118,6 +132,57 @@ mod tests {
             "https://opendart.fss.or.kr/api/list.json?crtfc_key=test-key&page_no=2"
         );
         assert!(!format!("{client:?}").contains("test-key"));
+    }
+
+    /// A server that answers one request with `response` and hands back
+    /// what it received.
+    fn serve_once(response: String) -> (u16, std::thread::JoinHandle<String>) {
+        use std::io::{Read, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let handle = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = Vec::new();
+            let mut buf = [0; 1024];
+            while !request.ends_with(b"\r\n\r\n") {
+                let n = stream.read(&mut buf).unwrap();
+                if n == 0 {
+                    break;
+                }
+                request.extend_from_slice(&buf[..n]);
+            }
+            stream.write_all(response.as_bytes()).unwrap();
+            String::from_utf8_lossy(&request).into_owned()
+        });
+        (port, handle)
+    }
+
+    /// The key is in the query string, so a `Referer` would carry it to
+    /// the host a redirect points at.
+    #[tokio::test]
+    async fn redirects_do_not_carry_the_key_to_another_host() {
+        let ok = "HTTP/1.1 200 OK\r\ncontent-length: 2\r\nconnection: close\r\n\r\n{}";
+        let (other, other_seen) = serve_once(ok.to_owned());
+        let redirect = format!(
+            "HTTP/1.1 302 Found\r\nlocation: http://localhost:{other}/elsewhere\r\ncontent-length: 0\r\nconnection: close\r\n\r\n"
+        );
+        let (first, first_seen) = serve_once(redirect);
+        let http = builder().no_proxy().build().unwrap();
+        let response = http
+            .get(format!(
+                "http://127.0.0.1:{first}/api/list.json?crtfc_key=secret-key"
+            ))
+            .send()
+            .await
+            .unwrap();
+        assert!(response.status().is_success());
+        assert!(first_seen.join().unwrap().contains("crtfc_key=secret-key"));
+        let other_request = other_seen.join().unwrap();
+        assert!(
+            other_request.starts_with("GET /elsewhere"),
+            "{other_request}"
+        );
+        assert!(!other_request.contains("secret-key"), "{other_request}");
     }
 
     /// reqwest prints the request URL, query string included, in both

@@ -114,17 +114,17 @@ pub(crate) fn date<'de, D: Deserializer<'de>>(de: D) -> Result<Date, D::Error> {
     parse_date(&text).map_err(D::Error::custom)
 }
 
-/// `deserialize_with` for a `YYYYMMDD` field that may be blank.
+/// `deserialize_with` for a `YYYYMMDD` field that may be blank or `-`.
 pub(crate) fn opt_date<'de, D: Deserializer<'de>>(de: D) -> Result<Option<Date>, D::Error> {
-    match opt_string(de)? {
+    match opt_value(de)? {
         None => Ok(None),
         Some(text) => parse_date(&text).map(Some).map_err(D::Error::custom),
     }
 }
 
-/// `deserialize_with` for a `YYYY-MM-DD` field that may be blank.
+/// `deserialize_with` for a `YYYY-MM-DD` field that may be blank or `-`.
 pub(crate) fn opt_iso_date<'de, D: Deserializer<'de>>(de: D) -> Result<Option<Date>, D::Error> {
-    match opt_string(de)? {
+    match opt_value(de)? {
         None => Ok(None),
         Some(text) => parse_iso_date(&text).map(Some).map_err(D::Error::custom),
     }
@@ -164,7 +164,13 @@ fn parse_iso_date(text: &str) -> Result<Date, BoxError> {
 /// `deserialize_with` for a numeric column. Blank values and a lone `-`
 /// become `None`; anything else is kept as text in a [`Number`].
 pub(crate) fn number<'de, D: Deserializer<'de>>(de: D) -> Result<Option<Number>, D::Error> {
-    Ok(opt_string(de)?.filter(|text| text != "-").map(Number::new))
+    Ok(opt_value(de)?.map(Number::new))
+}
+
+/// Like [`opt_string`], and a lone `-`, which OpenDART puts in empty
+/// cells, is `None` too. For values with a format, such as dates.
+pub(crate) fn opt_value<'de, D: Deserializer<'de>>(de: D) -> Result<Option<String>, D::Error> {
+    Ok(opt_string(de)?.filter(|text| text != "-"))
 }
 
 /// `deserialize_with` for a string that OpenDART leaves blank (`""` or
@@ -213,6 +219,29 @@ mod tests {
         ] {
             assert!(parse_iso_date(bad).is_err(), "{bad:?} should not parse");
         }
+    }
+
+    #[test]
+    fn optional_dates_accept_blank_and_dash() {
+        #[derive(Deserialize)]
+        struct Row {
+            #[serde(default, deserialize_with = "opt_iso_date")]
+            iso: Option<Date>,
+            #[serde(default, deserialize_with = "opt_date")]
+            compact: Option<Date>,
+        }
+        let row = |json: &str| serde_json::from_str::<Row>(json).unwrap();
+        for json in [
+            r#"{"iso":"-","compact":"-"}"#,
+            r#"{"iso":" ","compact":""}"#,
+            "{}",
+        ] {
+            let row = row(json);
+            assert_eq!((row.iso, row.compact), (None, None), "{json}");
+        }
+        let row = row(r#"{"iso":"2025-12-31","compact":"20251231"}"#);
+        assert_eq!(row.iso, Some(date(2025, 12, 31)));
+        assert_eq!(row.compact, Some(date(2025, 12, 31)));
     }
 
     #[test]

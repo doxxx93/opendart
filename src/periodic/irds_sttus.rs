@@ -47,8 +47,9 @@ impl Client {
     /// 증자(감자) 현황 (`irdsSttus.json`): changes in paid-in capital: issuance and
     /// reduction of shares.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn irds_sttus(&self, request: &ReportRequest) -> Result<Vec<CapitalChange>, Error> {
         self.report_rows(ENDPOINT, request).await
     }

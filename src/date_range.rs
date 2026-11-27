@@ -31,7 +31,8 @@ impl DateRangeRequest {
     ///
     /// The range applies to the date a report was first filed (the guide
     /// calls both dates 최초접수일), and the row shows its latest version.
-    /// An amendment filed on 2026-11-26 to a report first filed on
+    /// Observed with `piicDecsn.json`:
+    /// an amendment filed on 2026-11-26 to a report first filed on
     /// 2026-10-26 comes back, with the amendment's `rcept_no`, for a range
     /// that includes 2026-10-26, and not for 2026-11-26 alone. To follow new
     /// filings day by day, watch [`Client::list`] instead.

@@ -45,8 +45,9 @@ impl Client {
     /// (`drctrAdtAllMendngSttusGmtsckConfmAmount.json`): pay limit for
     /// directors and auditors approved by the shareholders' meeting.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn drctr_adt_all_mendng_sttus_gmtsck_confm_amount(
         &self,
         request: &ReportRequest,

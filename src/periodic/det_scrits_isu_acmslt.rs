@@ -57,8 +57,9 @@ pub struct DebtIssuance {
 impl Client {
     /// 채무증권 발행실적 (`detScritsIsuAcmslt.json`): debt securities issued.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn det_scrits_isu_acmslt(
         &self,
         request: &ReportRequest,

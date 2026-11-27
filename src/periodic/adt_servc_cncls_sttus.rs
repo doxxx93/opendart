@@ -54,8 +54,9 @@ pub struct AuditContract {
 impl Client {
     /// 감사용역체결현황 (`adtServcCnclsSttus.json`): audit service contracts.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn adt_servc_cncls_sttus(
         &self,
         request: &ReportRequest,

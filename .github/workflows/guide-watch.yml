@@ -23,9 +23,16 @@ on:
 permissions:
   contents: read
 
+# A manual run overlapping the daily one could otherwise open two issues.
+concurrency:
+  group: guide-watch-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   snapshot:
     runs-on: ubuntu-latest
+    # About 8 minutes from GitHub's US runners.
+    timeout-minutes: 30
     permissions:
       contents: read
       issues: write
@@ -44,7 +51,8 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           title="OpenDART guide changed"
-          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          # Only an issue this workflow opened: anyone can open one with the same title.
+          number=$(gh issue list --state open --author app/github-actions --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
           if git diff --quiet -- spec/guide-snapshot.json; then
             echo "No change in the guide snapshot."
             # The committed snapshot caught up (or the change was reverted).

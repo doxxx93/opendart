@@ -115,8 +115,9 @@ impl Client {
     /// 유무상증자 결정 (`pifricDecsn.json`): decisions on combined paid-in capital
     /// increases and bonus issues filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn pifric_decsn(
         &self,
         request: &DateRangeRequest,

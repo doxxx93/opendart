@@ -70,8 +70,9 @@ impl Client {
     /// 유상증자 결정 (`piicDecsn.json`): decisions on paid-in capital increases
     /// (rights offerings) filed in the date range.
     ///
-    /// Returns an empty list when there are none
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn piic_decsn(
         &self,
         request: &DateRangeRequest,

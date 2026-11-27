@@ -9,8 +9,12 @@ impl Client {
     /// 개인별 보수지급 금액(5억이상 상위5인) (`indvdlByPay.json`): top five individuals paid
     /// 500 million won or more.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Covers reports filed until 2026-04 (the guide: "2026년 4월까지 제출된
+    /// 보고서해당"); later reports are in [`indvdl_by_pay_v2`](Client::indvdl_by_pay_v2).
+    ///
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn indvdl_by_pay(
         &self,
         request: &ReportRequest,

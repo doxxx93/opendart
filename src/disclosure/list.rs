@@ -273,7 +273,8 @@ pub struct Disclosure {
     /// 법인구분: the market.
     pub corp_cls: CorpClass,
     /// 보고서명: report name, with prefixes such as `[기재정정]` for
-    /// amendments. Trailing padding is removed.
+    /// amendments. Trailing padding is removed; runs of spaces inside the
+    /// name are kept, e.g. `"투자유의안내              (관리종목지정 우려 예고)"`.
     #[serde(deserialize_with = "decode::trimmed")]
     pub report_nm: String,
     /// 접수번호: the 14-digit receipt number that identifies the filing.

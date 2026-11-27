@@ -59,8 +59,9 @@ impl Client {
     /// 신종자본증권 미상환 잔액 (`newCaplScritsNrdmpBlce.json`): outstanding hybrid
     /// capital securities by remaining maturity.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn new_capl_scrits_nrdmp_blce(
         &self,
         request: &ReportRequest,

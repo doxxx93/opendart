@@ -46,6 +46,13 @@ exchanges and splits, grouped as in the reply.
 
 ## Usage
 
+The client is async and needs a Tokio runtime:
+
+```sh
+cargo add opendart
+cargo add tokio --features macros,rt-multi-thread
+```
+
 ```rust
 use opendart::Client;
 use opendart::disclosure::ListRequest;
@@ -75,8 +82,10 @@ environment and are marked `#[ignore]`, so `cargo test` runs offline.
 
 ## Minimum supported Rust version
 
-Rust 1.88 (edition 2024). Raising the MSRV is treated as a minor version
-change.
+Rust 1.88, when dependencies are resolved for it, which Cargo's MSRV-aware
+resolver does by default in edition 2024 packages. Elsewhere Cargo may pick a
+zip 9.8 release that needs Rust 1.89; `cargo update -p zip --precise 9.7.3`
+fixes that. Raising the MSRV is treated as a minor version change.
 
 ## License
 

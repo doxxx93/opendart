@@ -60,8 +60,9 @@ pub struct Executive {
 impl Client {
     /// 임원 현황 (`exctvSttus.json`): executives.
     ///
-    /// Returns an empty list when the report has no such section
-    /// ([`Status::NoData`](crate::Status::NoData)).
+    /// Returns an empty list when OpenDART has no data for the request
+    /// ([`Status::NoData`](crate::Status::NoData)); see the
+    /// [crate docs](crate#no-data).
     pub async fn exctv_sttus(&self, request: &ReportRequest) -> Result<Vec<Executive>, Error> {
         self.report_rows(ENDPOINT, request).await
     }
